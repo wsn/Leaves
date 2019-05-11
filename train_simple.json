@@ -1,0 +1,28 @@
+﻿{
+    "task": "1",
+    "img_size" : 128,
+    "img_channels" : 3,
+
+    "datasets": {
+       "train":{
+            "dir":"./Dataprep/results/train1.tfrecord"
+       },
+       "val":{
+            "dir":"./Dataprep/results/val1.tfrecord"
+       }
+    },
+
+    "networks": {
+        "which_model": "SIMPLE",
+        "num_features": 64
+    },
+
+    "solver": {
+        "batch_size": 16,
+        "optimizer_type": "adam",
+        "lr_init": 1e-3,
+        "lr_decay": 0.1,
+        "decay_steps": 5000,
+        "save_steps": 1000
+    }
+}

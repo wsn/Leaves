@@ -1,0 +1,1 @@
+python data_prepare.py --task 1 --size 128 --vals 50 --test 50 --img_root_dir ./data1/

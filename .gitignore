@@ -1,0 +1,7 @@
+﻿# Datasets will not be committed.
+*.zip
+*.jpg
+*.JPG
+*.jpeg
+*.txt
+*.tfrecord
