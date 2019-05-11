@@ -1,7 +1,7 @@
 ﻿def create_model(opt):
 
 	if opt['task'] == '1' or '2':
-		net = define_net(opt['network'])
+		net = define_net(opt['networks'])
 		return net
 	else:
 		raise NotImplementedError('The task [%s] of networks is not recognized.' % opt['task'])

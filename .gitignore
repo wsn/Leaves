@@ -5,3 +5,6 @@
 *.jpeg
 *.txt
 *.tfrecord
+
+# Compiled 
+__pycache__
