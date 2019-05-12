@@ -8,3 +8,6 @@
 
 # Compiled 
 __pycache__
+
+# Models
+Models/*

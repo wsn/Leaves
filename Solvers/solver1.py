@@ -1,10 +1,12 @@
 ﻿import tensorflow as tf
-import numpy as np
 import os
 import pdb
+
 import cv2
+import numpy as np
 
 from Archs import create_model
+
 
 class Solver1(object):
 
@@ -30,6 +32,7 @@ class Solver1(object):
         self.global_step = tf.Variable(1, name='global_step')
         self.max_steps = self.train_opt['max_steps']
         self.resume = self.train_opt['resume']
+        self.eval_steps = self.train_opt['eval_steps']
 
         if self.optimizer_type == 'ADAM':
             self.optimizer = tf.train.AdamOptimizer(self.learning_rate)
@@ -110,13 +113,14 @@ class Solver1(object):
         checkpoint_dir = self.train_opt['ckpt_dir'] + '%03d/' % self.train_opt['ckpt_id']
         os.makedirs(checkpoint_dir, exist_ok=True)
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+        print('===> Saving checkpoint to [%s]' % checkpoint_dir)
         ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=self.model, optimizer_step=self.global_step)
         ckpt.save(checkpoint_prefix)
     
     def _load_checkpoint(self):
 
         checkpoint_dir = self.train_opt['ckpt_dir'] + '%03d/' % self.train_opt['ckpt_id']
-        print('Loading checkpoint from [%s]' % checkpoint_dir)
+        print('===> Loading checkpoint from [%s]' % checkpoint_dir)
         ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=self.model, optimizer_step=self.global_step)
         ckpt.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
@@ -136,15 +140,10 @@ class Solver1(object):
             
             images, labels = train_batch
 
-            '''test_img = images[0].numpy().astype(np.uint8)
-            test_img = cv2.cvtColor(test_img, cv2.COLOR_RGB2BGR)
-            cv2.imshow('test', test_img)
-            cv2.waitKey(0)
-            pdb.set_trace()'''
             images = self._normalize_image(images)            
             
             with tf.GradientTape() as tape:
-                logits = self.model(images)
+                logits = self.model(images, True)
                 loss = self.loss(labels, logits)
             
             train_acc = self.metric(labels, logits) * 100
@@ -154,8 +153,24 @@ class Solver1(object):
             self.optimizer.apply_gradients(zip(grads, self.model.variables), global_step=self.global_step)
 
             print('[Step %d] Training loss = %.4f, Training Accuracy = %.2f%%.' % (self.global_step, loss, train_acc), end='\r')
-            
-        
+
+            if (self.global_step.numpy() + 1) % self.eval_steps == 0:
+                
+                print('\n')
+                val_acc = []
+                for val_img, val_lbl in self.val_dataset:
+                    
+                    val_img = self._normalize_image(val_img)
+                    val_lgt = self.model(val_img, False)
+                    val_acc.append(self.metric(val_lbl, val_lgt).numpy() * 100)
+                
+                val_acc = np.array(val_acc).mean()
+
+                print('Validation Accuracy = %.2f%%.' % val_acc)
+
+            if (self.global_step.numpy() + 1) % self.save_steps == 0:
+                self._save_checkpoint()
+
         print('===> Training ends.')
         
     

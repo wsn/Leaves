@@ -22,7 +22,7 @@ class Simple(tf.keras.Model):
         self.fc1 = tf.keras.layers.Dense(self.num_features * 4, activation='relu')
         self.fc2 = tf.keras.layers.Dense(3, activation='relu')
 
-    def call(self, x):
+    def call(self, x, training=True):
         
         x = self.conv1(x)
         x = self.max_pool1(x)
