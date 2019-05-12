@@ -1,9 +1,11 @@
 ﻿import tensorflow as tf 
+import argparse
+import os
+import pdb
+
 import numpy as np
 from PIL import Image
-import os 
-import argparse
-import pdb
+
 
 def main():
 

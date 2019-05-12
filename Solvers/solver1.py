@@ -1,11 +1,12 @@
-import tensorflow as tf
 import os
 import pdb
 
 import cv2
 import numpy as np
+import tensorflow as tf
 
 from Archs import create_model
+
 
 class Solver1(object):
 

@@ -1,7 +1,9 @@
-﻿import os
+﻿import json
+import os
+
 from collections import OrderedDict
 from datetime import datetime
-import json
+
 
 def get_timestamp():
     return datetime.now().strftime('%y%m%d-%H%M%S')
