@@ -1,1 +1,1 @@
-python main.py --options ./train_simple.json
+python main.py --options ./exec_simple.json

@@ -1,4 +1,4 @@
-﻿import tensorflow as tf
+import tensorflow as tf
 import os
 import pdb
 
@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 
 from Archs import create_model
-
 
 class Solver1(object):
 
@@ -132,8 +131,6 @@ class Solver1(object):
             self._load_checkpoint()
         
         for step, train_batch in enumerate(self.train_dataset):
-            
-            self.global_step.assign(step)
 
             if self.global_step > self.max_steps:
                 break
@@ -154,7 +151,7 @@ class Solver1(object):
 
             print('[Step %d] Training loss = %.4f, Training Accuracy = %.2f%%.' % (self.global_step, loss, train_acc), end='\r')
 
-            if (self.global_step.numpy() + 1) % self.eval_steps == 0:
+            if (self.global_step + 1) % self.eval_steps == 0:
                 
                 print('\n')
                 val_acc = []
@@ -168,16 +165,59 @@ class Solver1(object):
 
                 print('Validation Accuracy = %.2f%%.' % val_acc)
 
-            if (self.global_step.numpy() + 1) % self.save_steps == 0:
+            if (self.global_step + 1) % self.save_steps == 0:
                 self._save_checkpoint()
+
+            self.learning_rate.assign(tf.train.exponential_decay(self.learning_rate_init, self.global_step, self.decay_steps, self.learning_rate_decay, True)())
+
+            self.global_step.assign_add(1)
 
         print('===> Training ends.')
         
-    
+    def _load_raw_image(self, path):
+
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (self.img_size, self.img_size), interpolation=cv2.INTER_LINEAR)
+        img = tf.Variable(img, dtype=tf.float32)
+        img = tf.reshape(img, [-1, self.img_size, self.img_size, self.img_channels])
+
+        return img
+
     def test(self):
 
-        print('Testing starts.')
+        print('===> Testing starts.')
 
         self._load_checkpoint()
 
-        print('Testing ends.')
+        test_list_path = self.data_opt['test']['dir']
+
+        with open(test_list_path, 'r') as test_list:
+            test_fns = test_list.readlines()
+            test_fns = list(map(lambda x: x.strip(), test_fns))
+        
+        test_fns = sorted(test_fns)
+        test_acc = np.zeros([len(test_fns)])
+        for idx, test_fn in enumerate(test_fns):
+            
+            splitted = test_fn.split(' ')
+            label = tf.Variable(int(splitted[-1]))
+            label = tf.reshape(label, [1])
+            fname = ' '.join(splitted[:-1])
+            
+            image = self._load_raw_image(fname)
+            image = self._normalize_image(image)
+            logit = self.model(image, False)
+            acc = self.metric(label, logit) * 100
+            
+            test_acc[idx] = acc
+
+            prog = idx / len(test_fns) * 100
+            print('[%dth Sample] Testing Accuracy = %.2f%%, Progress = %.2f%%.' % ((idx + 1), acc.numpy(), prog), end='\r')
+        
+        test_acc = test_acc.mean()
+        
+        print('\n')
+        print('Total Accuracy = %.2f%%.' % test_acc)
+        
+        print('===> Testing ends.')

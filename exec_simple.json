@@ -3,7 +3,7 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 8,
-    "is_training": true,
+    "is_training": false,
 
     "datasets": {
        "train":{
@@ -11,6 +11,9 @@
        },
        "val":{
             "dir":"./Dataprep/results/val1.tfrecord"
+       },
+       "test":{
+           "dir":"./Dataprep/results/test1.txt"
        }
     },
 
@@ -24,7 +27,7 @@
         "optimizer_type": "adam",
         "lr_init": 1e-4,
         "lr_decay": 0.5,
-        "decay_steps": 5000,
+        "decay_steps": 10,
         "eval_steps": 10,
         "save_steps": 500,
         "max_steps": 10000,
