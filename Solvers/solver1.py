@@ -57,8 +57,16 @@ class Solver1(object):
 
         # Model Options
         self.model = create_model(self.opt)
-        self.loss = tf.losses.sparse_softmax_cross_entropy
         
+    
+    def loss(self, labels, logits):
+
+        return tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(labels, logits, True))
+    
+    def metric(self, labels, logtis):
+
+        preds = tf.math.softmax(logtis)
+        return tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_accuracy(labels, preds))
 
     def _parse_function(self, example_proto):
         
@@ -73,6 +81,7 @@ class Solver1(object):
         image = tf.reshape(image, [self.img_size, self.img_size, self.img_channels])
         image = tf.cast(image, tf.float32)
         label = tf.cast(lbl, tf.int32)
+        label = tf.reshape(label, [1])
         
         return image, label
     
@@ -98,16 +107,6 @@ class Solver1(object):
 
         return images, labels
 
-    def metric(self, labels, logits):
-
-        pred_result = tf.math.softmax(logits)
-        pred_result = tf.math.argmax(pred_result, 1)
-        pred_result = tf.cast(pred_result, tf.int32)
-        compare = tf.cast(tf.equal(pred_result, labels), tf.float32)
-        acc = tf.reduce_mean(compare)
-
-        return acc
-
     def _save_checkpoint(self):
         
         checkpoint_dir = self.train_opt['ckpt_dir'] + '%03d/' % self.train_opt['ckpt_id']
@@ -132,8 +131,10 @@ class Solver1(object):
             self._load_checkpoint()
         
         for step, train_batch in enumerate(self.train_dataset):
-
-            if self.global_step > self.max_steps:
+            
+            glsp = self.global_step.numpy()
+            
+            if glsp > self.max_steps:
                 break
             
             images, labels = train_batch
@@ -145,14 +146,14 @@ class Solver1(object):
                 loss = self.loss(labels, logits)
             
             train_acc = self.metric(labels, logits) * 100
-
+            
             grads = tape.gradient(loss, self.model.variables)
             
             self.optimizer.apply_gradients(zip(grads, self.model.variables), global_step=self.global_step)
 
             print('[Step %d] Training loss = %.4f, Training Accuracy = %.2f%%.' % (self.global_step, loss, train_acc), end='\r')
-
-            if (self.global_step + 1) % self.eval_steps == 0:
+            
+            if glsp % self.eval_steps == 0:
                 
                 print('\n')
                 val_acc = []
@@ -166,12 +167,12 @@ class Solver1(object):
 
                 print('Validation Accuracy = %.2f%%.' % val_acc)
 
-            if (self.global_step + 1) % self.save_steps == 0:
+            if glsp % self.save_steps == 0:
                 self._save_checkpoint()
 
             self.learning_rate.assign(tf.train.exponential_decay(self.learning_rate_init, self.global_step, self.decay_steps, self.learning_rate_decay, True)())
 
-            self.global_step.assign_add(1)
+            self.global_step.assign(step + 1)
 
         print('===> Training ends.')
         
@@ -203,12 +204,13 @@ class Solver1(object):
             
             splitted = test_fn.split(' ')
             label = tf.Variable(int(splitted[-1]))
-            label = tf.reshape(label, [1])
+            label = tf.reshape(label, [-1, 1])
             fname = ' '.join(splitted[:-1])
             
             image = self._load_raw_image(fname)
             image = self._normalize_image(image)
             logit = self.model(image, False)
+            
             acc = self.metric(label, logit) * 100
             
             test_acc[idx] = acc

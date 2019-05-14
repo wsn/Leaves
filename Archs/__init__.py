@@ -1,4 +1,4 @@
-﻿def create_model(opt):
+def create_model(opt):
 
 	if opt['task'] == '1' or '2':
 		net = define_net(opt['networks'])
@@ -14,7 +14,11 @@ def define_net(opt):
 	if which_model == 'SIMPLE':
 		from .simple_arch import Simple
 		net = Simple(opt['num_features'])
+	elif which_model == 'NAIVE':
+		from .naive_arch import Naive
+		net = Naive(opt['num_features'])
 	else:
 		raise NotImplementedError('Network [%s] is not recognized.' % which_model)
 
 	return net
+	

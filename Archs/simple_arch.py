@@ -1,6 +1,10 @@
-﻿import tensorflow as tf
+import tensorflow as tf
 
 class Simple(tf.keras.Model):
+
+    '''
+        Simple : Simplified VGG-19 Architecture for task 1.
+    '''
 
     def __init__(self, num_features):
 
