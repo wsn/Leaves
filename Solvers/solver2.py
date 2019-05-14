@@ -8,7 +8,7 @@ import tensorflow as tf
 from Archs import create_model
 
 
-class Solver1(object):
+class Solver2(object):
 
     def __init__(self, opt):
 
@@ -49,7 +49,7 @@ class Solver1(object):
         self.cpu_threads = self.opt['cpu_threads']
         self.train_dir = self.data_opt['train']['dir']
         self.train_dataset = tf.data.TFRecordDataset([self.train_dir], None, None, self.cpu_threads)
-        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads).map(self._augment, self.cpu_threads)
+        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads)
         self.train_dataset = self.train_dataset.repeat(-1).shuffle(5000).batch(self.batch_size).prefetch(self.batch_size)
         self.val_dir = self.data_opt['val']['dir']
         self.val_dataset = tf.data.TFRecordDataset([self.val_dir], None, None, self.cpu_threads)
@@ -70,18 +70,20 @@ class Solver1(object):
 
     def _parse_function(self, example_proto):
         
-        features = {'image': tf.FixedLenFeature((), tf.string, ''), 'label': tf.FixedLenFeature((), tf.int64, -1)}
+        features = {'image': tf.FixedLenFeature((), tf.string, ''), 'label': tf.FixedLenFeature((), tf.string, '')}
         
         parsed_features = tf.parse_single_example(example_proto, features)
         
-        lbl = parsed_features['label']
-        img_raw = parsed_features['image']
+        lbl_raw = parsed_features['label']
+        label = tf.decode_raw(lbl_raw, tf.uint8)
+        label = tf.reshape(label, [self.img_size, self.img_size, self.img_channels])
         
+        label = tf.cast(label, tf.float32)
+
+        img_raw = parsed_features['image']
         image = tf.decode_raw(img_raw, tf.uint8)
         image = tf.reshape(image, [self.img_size, self.img_size, self.img_channels])
         image = tf.cast(image, tf.float32)
-        label = tf.cast(lbl, tf.int32)
-        label = tf.reshape(label, [1])
         
         return image, label
     
@@ -98,14 +100,6 @@ class Solver1(object):
         image_out[image_out < 0.0] = 0.0
 
         return image_out
-    
-    def _augment(self, images, labels):
-
-        images = tf.image.random_flip_left_right(images)
-        images = tf.image.random_flip_up_down(images)
-        #images = tf.image.random_brightness(images, 127.5)
-
-        return images, labels
 
     def _save_checkpoint(self):
         
@@ -138,7 +132,7 @@ class Solver1(object):
                 break
             
             images, labels = train_batch
-
+            pdb.set_trace()
             images = self._normalize_image(images)            
             
             with tf.GradientTape() as tape:

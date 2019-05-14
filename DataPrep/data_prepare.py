@@ -1,4 +1,4 @@
-﻿import tensorflow as tf 
+import tensorflow as tf 
 import argparse
 import os
 import pdb
@@ -133,9 +133,11 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test):
     for idx, sample_name in enumerate(leaves_names):
         full_name_leaf = leaf_dir + sample_name
         full_name_vein = full_name_leaf.replace('leaf', 'vein')
-        img  = Image.open(full_name_leaf)
+        img = Image.open(full_name_leaf)
         img = img.resize((img_size, img_size)).tobytes()
-        lbl  = Image.open(full_name_vein)
+        lbl = Image.open(full_name_vein)
+        if len(lbl.getbands()) != 3:
+            lbl = lbl.convert('RGB')
         lbl = lbl.resize((img_size, img_size)).tobytes()
         if idx in val_idcs:
             val_dataset_writer.write(serialize_task2(img, lbl))

@@ -1,1 +1,0 @@
-python main.py --options ./exec_simple.json
