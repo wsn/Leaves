@@ -33,8 +33,7 @@ class Naive(tf.keras.Model):
         self.upsample_1 = tf.keras.layers.UpSampling2D(2, interpolation='bilinear')
         self.conv1_3 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu')
         self.conv1_4 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu')
-        self.conv_out1 = tf.keras.layers.Convolution2D(2, 3, 1, 'same', activation='relu')
-        self.conv_out1 = tf.keras.layers.Convolution2D(1, 1, 1, 'same', activation='sigmoid')
+        self.conv_out = tf.keras.layers.Convolution2D(1, 1, 1, 'same', activation='softmax')
 
     def call(self, x, training=True):
 
@@ -62,7 +61,6 @@ class Naive(tf.keras.Model):
         x = tf.keras.layers.concatenate([x, x1])
         x = self.conv1_3(x)
         x = self.conv1_4(x)
-        x = self.conv_out1(x)
-        x = self.conv_out2(x)
+        x = self.conv_out(x)
 
         return x

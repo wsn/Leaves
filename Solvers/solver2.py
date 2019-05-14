@@ -61,12 +61,11 @@ class Solver2(object):
     
     def loss(self, labels, logits):
 
-        return tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(labels, logits, True))
+        return tf.math.reduce_mean(tf.keras.losses.binary_crossentropy(labels, logits))
     
     def metric(self, labels, logtis):
 
-        preds = tf.math.softmax(logtis)
-        return tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_accuracy(labels, preds))
+        return tf.math.reduce_mean(tf.keras.metrics.binary_accuracy(labels, logtis))
 
     def _parse_function(self, example_proto):
         
@@ -76,8 +75,7 @@ class Solver2(object):
         
         lbl_raw = parsed_features['label']
         label = tf.decode_raw(lbl_raw, tf.uint8)
-        label = tf.reshape(label, [self.img_size, self.img_size, self.img_channels])
-        
+        label = tf.reshape(label, [self.img_size, self.img_size, 1])
         label = tf.cast(label, tf.float32)
 
         img_raw = parsed_features['image']
@@ -132,7 +130,7 @@ class Solver2(object):
                 break
             
             images, labels = train_batch
-            pdb.set_trace()
+            
             images = self._normalize_image(images)            
             
             with tf.GradientTape() as tape:
@@ -144,7 +142,7 @@ class Solver2(object):
             grads = tape.gradient(loss, self.model.variables)
             
             self.optimizer.apply_gradients(zip(grads, self.model.variables), global_step=self.global_step)
-
+            
             print('[Step %d] Training loss = %.4f, Training Accuracy = %.2f%%.' % (self.global_step, loss, train_acc), end='\r')
             
             if glsp % self.eval_steps == 0:

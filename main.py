@@ -9,17 +9,19 @@ from options import parse_opt
 
 def main():
     
-    config = tf.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.allow_growth = True
-    tf.enable_eager_execution(config=config)
-
+    # Use TensorFlow 2.0 Features.
+    tf.enable_v2_behavior()
+    
+    # Parse arguments.
     parser = argparse.ArgumentParser()
     parser.add_argument('--options', type=str, help='Path to the option JSON file.')
     args = parser.parse_args()
     opt = parse_opt(args.options)
     
+    # Create solver.
     solver = create_solver(opt)
     
+    # Run solver.
     if opt['is_training']:
         solver.train()
     else:

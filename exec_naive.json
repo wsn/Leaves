@@ -23,7 +23,7 @@
     },
 
     "solver": {
-        "batch_size": 32,
+        "batch_size": 16,
         "optimizer_type": "adam",
         "lr_init": 1e-5,
         "lr_decay": 0.5,

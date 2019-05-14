@@ -2,6 +2,7 @@ import tensorflow as tf
 import argparse
 import os
 import pdb
+import cv2
 
 import numpy as np
 from PIL import Image
@@ -16,6 +17,7 @@ def main():
     parser.add_argument('--tests', type=int, default=50, help='Specify the number of test images per class.')
     parser.add_argument('--img_root_dir', type=str, default='./data1/', help='Specify the root directory of raw datasets.')
     parser.add_argument('--result_dir', type=str, default='./results/', help='Specify the output TFRecords directory.')
+    parser.add_argument('--crop_strategy', type=str, default='DSCROP', help='Specify the method of cropping patches.')
     args = parser.parse_args()
 
     task_type = args.task
@@ -24,11 +26,12 @@ def main():
     img_size = args.size
     nb_val = args.vals
     nb_test = args.tests
+    crps = args.crop_strategy
 
     if task_type == 1:
         prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test)
     elif task_type == 2:
-        prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test)
+        prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps)
     else:
         raise NotImplementedError('Task type not supported!')
 
@@ -101,7 +104,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
 
     print('Task1 preparation ends.')
 
-def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test):
+def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
     
     '''
         We suppose the raw datasets have structures like this.
@@ -136,9 +139,12 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test):
         img = Image.open(full_name_leaf)
         img = img.resize((img_size, img_size)).tobytes()
         lbl = Image.open(full_name_vein)
-        if len(lbl.getbands()) != 3:
-            lbl = lbl.convert('RGB')
-        lbl = lbl.resize((img_size, img_size)).tobytes()
+        lbl = lbl.resize((img_size, img_size)).convert('RGB')
+        lbl = np.array(lbl)
+        lbl = cv2.cvtColor(lbl, cv2.COLOR_RGB2GRAY)
+        lbl[lbl < 127.5] = 0
+        lbl[lbl >= 127.5] = 1
+        lbl = lbl.astype(np.uint8).tobytes()
         if idx in val_idcs:
             val_dataset_writer.write(serialize_task2(img, lbl))
         elif idx in test_idcs:
@@ -153,6 +159,15 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test):
     test_dataset_writer.close()
     
     print('Task2 preparation ends.')
+
+def gen_patches_t2(images, labels, patch_size, strategy):
+
+    if strategy == 'DSCROP':
+        pass
+    elif strategy == 'CHOPCROP':
+        pass
+    else:
+        raise NotImplementedError('Strategy [%s] not supported!' % strategy)
 
 if __name__ == '__main__':
     main()
