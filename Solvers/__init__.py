@@ -1,4 +1,4 @@
-﻿from .solver1 import Solver1
+from .solver1 import Solver1
 from .solver2 import Solver2
 def create_solver(opt):
     if opt['task'] == '1':
