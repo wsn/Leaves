@@ -3,7 +3,7 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": true,
+    "is_training": false,
 
     "datasets": {
        "train":{
