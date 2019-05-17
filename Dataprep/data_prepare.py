@@ -75,7 +75,9 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
     train_dataset_writer = tf.python_io.TFRecordWriter(train_filename)
     val_dataset_writer = tf.python_io.TFRecordWriter(val_filename)
     test_dataset_writer = open(test_filename, 'w')
-
+    
+    test_prefix = './' + os.getcwd().split('/')[-1] + '/'
+    
     print('Task1 preparation starts.')
 
     classes_dir = os.listdir(root_dir)
@@ -93,6 +95,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
             if img_idx in val_idcs:
                 val_dataset_writer.write(serialize_task1(img, class_idx))
             elif img_idx in test_idcs:
+                img_name_full = img_name_full.replace('./', test_prefix)
                 test_dataset_writer.write(img_name_full + '\n')
             else:
                 train_dataset_writer.write(serialize_task1(img, class_idx))
@@ -124,6 +127,8 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
     val_dataset_writer = tf.python_io.TFRecordWriter(val_filename)
     test_dataset_writer = open(test_filename, 'w')
 
+    test_prefix = './' + os.getcwd().split('/')[-1] + '/'
+    
     print('Task2 preparation starts.')
 
     leaf_dir = root_dir + 'leaf/'
@@ -148,6 +153,8 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
         if idx in val_idcs:
             val_dataset_writer.write(serialize_task2(img, lbl))
         elif idx in test_idcs:
+            full_name_leaf = full_name_leaf.replace('./', test_prefix)
+            full_name_vein = full_name_vein.replace('./', test_prefix)
             test_dataset_writer.write(full_name_leaf + '\n')
             test_dataset_writer.write(full_name_vein + '\n')
         else:
