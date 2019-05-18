@@ -2,6 +2,7 @@ import argparse
 import os
 import pdb
 import tensorflow as tf
+import numpy as np
 
 from Solvers import create_solver
 from options import parse_opt
@@ -9,8 +10,14 @@ from options import parse_opt
 
 def main():
     
-    # Use TensorFlow 2.0 Features.
-    tf.enable_v2_behavior()
+    # Switch Eager Execution Mode.
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    tf.enable_eager_execution(config=config)
+    
+    # Deterministic Settings.
+    tf.set_random_seed(1)
+    np.random.seed(1)
     
     # Parse arguments.
     parser = argparse.ArgumentParser()

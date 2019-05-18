@@ -3,7 +3,7 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": true,
+    "is_training": false,
 
     "datasets": {
        "train":{
@@ -19,7 +19,9 @@
 
     "networks": {
         "which_model": "SIMPLE",
-        "num_features": 64
+        "num_features": 128,
+        "weight_decay": 1e-2,
+        "initializer": "he_normal" 
     },
 
     "solver": {
@@ -28,11 +30,11 @@
         "lr_init": 1e-5,
         "lr_decay": 0.5,
         "decay_steps": 2000,
-        "eval_steps": 500,
+        "eval_steps": 200,
         "save_steps": 1000,
-        "max_steps": 100000,
+        "max_steps": 10000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 0,
+        "ckpt_id": 1,
         "resume": false
     }
 }
