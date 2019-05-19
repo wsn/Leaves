@@ -172,8 +172,6 @@ class Solver1(object):
 
             self.learning_rate.assign(tf.train.exponential_decay(self.learning_rate_init, self.global_step, self.decay_steps, self.learning_rate_decay, True)())
 
-            self.global_step.assign(step + 1)
-
         print('===> Training ends.')
         
     def _load_raw_image(self, path):
