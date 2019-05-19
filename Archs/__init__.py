@@ -13,7 +13,7 @@ def define_net(opt):
 
     if which_model == 'SIMPLE':
         from .simple_arch import Simple
-        net = Simple(opt['num_features'])
+        net = Simple(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'NAIVE':
         from .naive_arch import Naive
         net = Naive(opt['num_features'])

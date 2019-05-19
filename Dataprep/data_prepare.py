@@ -96,7 +96,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
                 val_dataset_writer.write(serialize_task1(img, class_idx))
             elif img_idx in test_idcs:
                 img_name_full = img_name_full.replace('./', test_prefix)
-                test_dataset_writer.write(img_name_full + '\n')
+                test_dataset_writer.write(img_name_full + ' %d\n' % class_idx)
             else:
                 train_dataset_writer.write(serialize_task1(img, class_idx))
             print('Class[%d] %dth Image done, progress = %.2f%%.' % (class_idx, img_idx, 100 * img_idx / nb_imgs), end='\r')
