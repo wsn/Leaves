@@ -3,7 +3,7 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 8,
-    "is_training": true,
+    "is_training": "train",
 
     "datasets": {
        "train":{
@@ -19,7 +19,9 @@
 
     "networks": {
         "which_model": "NAIVE",
-        "num_features": 64
+        "num_features": 64,
+        "weight_decay": 1e-2,
+        "initializer": "he_normal"
     },
 
     "solver": {

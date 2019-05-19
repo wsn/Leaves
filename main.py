@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import os
 import pdb
 import tensorflow as tf
@@ -29,10 +29,14 @@ def main():
     solver = create_solver(opt)
     
     # Run solver.
-    if opt['is_training']:
+    if opt['is_training'] == 'train':
         solver.train()
-    else:
+    elif opt['is_training'] == 'test':
         solver.test()
+    elif opt['is_training'] == 'play':
+        solver.play()
+    else:
+        raise NotImplementedError('Unsupported usage.')
 
 
 if __name__ == '__main__':

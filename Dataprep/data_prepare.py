@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--tests', type=int, default=50, help='Specify the number of test images per class.')
     parser.add_argument('--img_root_dir', type=str, default='./data1/', help='Specify the root directory of raw datasets.')
     parser.add_argument('--result_dir', type=str, default='./results/', help='Specify the output TFRecords directory.')
-    parser.add_argument('--crop_strategy', type=str, default='DSCROP', help='Specify the method of cropping patches.')
+    parser.add_argument('--raw_size', type=int, default=1024, help='Specify the original data size for task2.')
     args = parser.parse_args()
 
     task_type = args.task
@@ -27,12 +27,12 @@ def main():
     img_size = args.size
     nb_val = args.vals
     nb_test = args.tests
-    crps = args.crop_strategy
+    raw_size = args.raw_size
 
     if task_type == 1:
         prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test)
     elif task_type == 2:
-        prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps)
+        prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, raw_size)
     else:
         raise NotImplementedError('Task type not supported!')
 
@@ -108,7 +108,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
 
     print('Task1 preparation ends.')
 
-def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
+def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, raw_size):
     
     '''
         We suppose the raw datasets have structures like this.
@@ -143,24 +143,28 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
         full_name_leaf = leaf_dir + sample_name
         full_name_vein = full_name_leaf.replace('leaf', 'vein')
         img = Image.open(full_name_leaf)
-        img = img.resize((img_size, img_size)).tobytes()
+        img = img.resize((raw_size, raw_size))
+        img = np.array(img)
         lbl = Image.open(full_name_vein)
-        lbl = lbl.resize((img_size, img_size)).convert('RGB')
+        lbl = lbl.resize((raw_size, raw_size)).convert('RGB')
         lbl = np.array(lbl)
         lbl = cv2.cvtColor(lbl, cv2.COLOR_RGB2GRAY)
         lbl[lbl < 127.5] = 0
         lbl[lbl >= 127.5] = 1
-        lbl = lbl.astype(np.uint8).tobytes()
+        lbl = lbl.astype(np.uint8)
+        patches = gen_patches_t2(img, lbl, img_size)
         if idx in val_idcs:
-            val_dataset_writer.write(serialize_task2(img, lbl))
+            for pi, pl in patches:
+                val_dataset_writer.write(serialize_task2(pi, pl)) 
         elif idx in test_idcs:
             full_name_leaf = full_name_leaf.replace('./', test_prefix)
             full_name_vein = full_name_vein.replace('./', test_prefix)
             test_dataset_writer.write(full_name_leaf + '\n')
             test_dataset_writer.write(full_name_vein + '\n')
         else:
-            train_dataset_writer.write(serialize_task2(img, lbl))
-        # print('%dth Image done, progress = %.2f%%.' % (idx, 100 * idx / nb_imgs), end='\r')
+            for pi, pl in patches:
+                train_dataset_writer.write(serialize_task2(pi, pl))
+        print('%dth Image done, progress = %.2f%%.' % (idx, 100 * idx / nb_imgs), end='\r')
     
     train_dataset_writer.close()
     val_dataset_writer.close()
@@ -168,14 +172,18 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, crps):
     
     print('Task2 preparation ends.')
 
-def gen_patches_t2(images, labels, patch_size, strategy):
+def gen_patches_t2(images, labels, patch_size):
 
-    if strategy == 'DSCROP':
-        pass
-    elif strategy == 'CHOPCROP':
-        pass
-    else:
-        raise NotImplementedError('Strategy [%s] not supported!' % strategy)
+    h, w = images.shape[0], images.shape[1]
+    patches = []
+    nb_ph = int(np.math.ceil(h / patch_size))
+    nb_pw = int(np.math.ceil(w / patch_size))
+    for i in range(nb_ph):
+        for j in range(nb_pw):
+            pi = images[i * patch_size:(i + 1) * patch_size, j * patch_size:(j + 1) * patch_size]
+            pl = labels[i * patch_size:(i + 1) * patch_size, j * patch_size:(j + 1) * patch_size]
+            patches.append((pi.tobytes(), pl.tobytes()))
+    return patches
 
 if __name__ == '__main__':
     main()
