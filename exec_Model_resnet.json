@@ -18,10 +18,10 @@
     },
 
     "networks": {
-        "which_model": "SIMPLE",
-        "num_features": 128,
-        "weight_decay": 1e-2,
-        "initializer": "he_normal" 
+        "which_model": "MODEL_RESNET",
+        "img_channels": 3,
+        "width": 128,
+        "height": 128
     },
 
     "solver": {
