@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*
 import tensorflow as tf 
 import argparse
 import os
@@ -99,7 +100,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
                 test_dataset_writer.write(img_name_full + ' %d\n' % class_idx)
             else:
                 train_dataset_writer.write(serialize_task1(img, class_idx))
-            print('Class[%d] %dth Image done, progress = %.2f%%.' % (class_idx, img_idx, 100 * img_idx / nb_imgs), end='\r')
+            #  print('Class[%d] %dth Image done, progress = %.2f%%.' % (class_idx, img_idx, 100 * img_idx / nb_imgs), end='\r')
     
     train_dataset_writer.close()
     val_dataset_writer.close()
