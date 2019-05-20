@@ -29,7 +29,7 @@ class Solver1(object):
         self.decay_steps = self.train_opt['decay_steps']
         self.save_steps = self.train_opt['save_steps']
         self.learning_rate = tf.Variable(self.learning_rate_init, name='learning_rate')
-        self.global_step = tf.Variable(1, name='global_step')
+        self.global_step = tf.Variable(1, name='global_step', dtype=tf.int64)
         self.max_steps = self.train_opt['max_steps']
         self.resume = self.train_opt['resume']
         self.eval_steps = self.train_opt['eval_steps']

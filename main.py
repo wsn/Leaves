@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 import os
 import pdb
 import tensorflow as tf
@@ -10,6 +10,15 @@ from options import parse_opt
 
 def main():
     
+    # Parse arguments.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--options', type=str, help='Path to the option JSON file.')
+    args = parser.parse_args()
+    opt = parse_opt(args.options)
+
+    # GPU Specification.
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['gpu_id']
+
     # Switch Eager Execution Mode.
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True
@@ -18,13 +27,7 @@ def main():
     # Deterministic Settings.
     tf.set_random_seed(1)
     np.random.seed(1)
-    
-    # Parse arguments.
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--options', type=str, help='Path to the option JSON file.')
-    args = parser.parse_args()
-    opt = parse_opt(args.options)
-    
+
     # Create solver.
     solver = create_solver(opt)
     

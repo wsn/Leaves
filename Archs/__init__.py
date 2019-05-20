@@ -16,7 +16,7 @@ def define_net(opt):
         net = Simple(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'NAIVE':
         from .naive_arch import Naive
-        net = Naive(opt['num_features'])
+        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'MODEL_RESNET':
         from .Model_resnet_arch import Model_resnet
         net = Model_resnet(opt['img_channels'],opt['width'],opt['height'])

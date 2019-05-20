@@ -7,7 +7,6 @@ import tensorflow as tf
 
 from Archs import create_model
 
-
 class Solver2(object):
 
     def __init__(self, opt):
@@ -57,15 +56,33 @@ class Solver2(object):
 
         # Model Options
         self.model = create_model(self.opt)
+
+    def _dice_loss(self, labels, preds):
         
-    
-    def loss(self, labels, logits):
+        eps = 1e-3
+        numerator = tf.math.reduce_sum(labels * preds)
+        denominator = tf.math.reduce_sum(tf.math.square(labels) + tf.math.square(preds))
+        dice_loss = 1.0 - 2.0 * (numerator + eps) / (denominator + eps)
 
-        return tf.math.reduce_mean(tf.keras.losses.binary_crossentropy(labels, logits))
-    
-    def metric(self, labels, logtis):
+        return dice_loss
 
-        return tf.math.reduce_mean(tf.keras.metrics.binary_accuracy(labels, logtis))
+    def _dice_metric(self, labels, preds):
+
+        eps = 1e-3
+        preds = tf.math.sign(preds - 0.5) * 0.5 + 0.5
+        numerator = tf.math.reduce_sum(labels * preds)
+        denominator = tf.math.reduce_sum(labels + preds)
+        dice_metric = 2.0 * (numerator + eps) / (denominator + eps)
+
+        return dice_metric
+
+    def metric(self, labels, preds):
+
+        return self._dice_metric(labels, preds)
+
+    def loss(self, labels, preds):
+
+        return self._dice_loss(labels, preds)
 
     def _parse_function(self, example_proto):
         
@@ -131,33 +148,41 @@ class Solver2(object):
             
             images, labels = train_batch
             
+            background_labels = labels
+            foreground_labels = 1 - labels
+            
             images = self._normalize_image(images)            
-            
+
             with tf.GradientTape() as tape:
-                logits = self.model(images, True)
-                loss = self.loss(labels, logits)
+                preds = self.model(images, True)
+                foreground_preds, background_preds = preds[:,:,:,0:1], preds[:,:,:,1:]
+                loss = self.loss(foreground_labels, foreground_preds) + self.loss(background_labels, background_preds)
             
-            train_acc = self.metric(labels, logits) * 100
+            train_fg_dice = self.metric(foreground_labels, foreground_preds)
+            train_bg_dice = self.metric(background_labels, background_preds)
             
             grads = tape.gradient(loss, self.model.variables)
             
             self.optimizer.apply_gradients(zip(grads, self.model.variables), global_step=self.global_step)
             
-            print('[Step %d] Training loss = %.4f, Training Accuracy = %.2f%%.' % (self.global_step, loss, train_acc), end='\r')
+            print('[Step %d] Training loss = %.4f, Training ForegroundDice = %.2f, Training BackgroundDice = %.2f.' % (self.global_step, loss, train_fg_dice, train_bg_dice), end='\r')
             
             if glsp % self.eval_steps == 0:
                 
                 print('\n')
-                val_acc = []
+                val_fg_dice = []
+                val_bg_dice = []
                 for val_img, val_lbl in self.val_dataset:
                     
                     val_img = self._normalize_image(val_img)
-                    val_lgt = self.model(val_img, False)
-                    val_acc.append(self.metric(val_lbl, val_lgt).numpy() * 100)
-                
-                val_acc = np.array(val_acc).mean()
+                    val_prd = self.model(val_img, False)
+                    val_fg_dice.append(self.metric(1 - val_lbl, val_prd[:,:,:,0:1]).numpy())
+                    val_bg_dice.append(self.metric(val_lbl, val_prd[:,:,:,1:]).numpy())
 
-                print('Validation Accuracy = %.2f%%.' % val_acc)
+                val_fg_dice = np.array(val_fg_dice).mean()
+                val_bg_dice = np.array(val_bg_dice).mean()
+
+                print('Validation ForegroundDice = %.2f, Validation BackgroundDice = %.2f.' % (val_fg_dice, val_bg_dice))
 
             if glsp % self.save_steps == 0:
                 self._save_checkpoint()
@@ -165,6 +190,13 @@ class Solver2(object):
             self.learning_rate.assign(tf.train.exponential_decay(self.learning_rate_init, self.global_step, self.decay_steps, self.learning_rate_decay, True)())
 
         print('===> Training ends.')
+
+
+    def _chop_forward(self, ori_image):
+
+        obj_h, obj_w = 1024, 1024
+
+        
         
     def _load_raw_image(self, path):
 
