@@ -17,6 +17,9 @@ def define_net(opt):
     elif which_model == 'NAIVE':
         from .naive_arch import Naive
         net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'])
+    elif which_model == 'MODEL_RESNET':
+        from .Model_resnet_arch import Model_resnet
+        net = Model_resnet(opt['img_channels'],opt['width'],opt['height'])
     else:
         raise NotImplementedError('Network [%s] is not recognized.' % which_model)
 
