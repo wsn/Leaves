@@ -100,7 +100,7 @@ def prepare_task1(root_dir, out_dir, img_size, nb_val, nb_test):
                 test_dataset_writer.write(img_name_full + ' %d\n' % class_idx)
             else:
                 train_dataset_writer.write(serialize_task1(img, class_idx))
-            #  print('Class[%d] %dth Image done, progress = %.2f%%.' % (class_idx, img_idx, 100 * img_idx / nb_imgs), end='\r')
+            print('Class[%d] %dth Image done, progress = %.2f%%.' % (class_idx, img_idx, 100 * img_idx / nb_imgs), end='\r')
     
     train_dataset_writer.close()
     val_dataset_writer.close()
@@ -152,7 +152,7 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, raw_size):
         lbl[lbl < 127.5] = 0
         lbl[lbl >= 127.5] = 1
         lbl = lbl.astype(np.uint8)
-        patches = gen_patches_t2(img, lbl, img_size)
+        '''patches = gen_patches_t2(img, lbl, img_size)
         if idx in val_idcs:
             for pi, pl in patches:
                 val_dataset_writer.write(serialize_task2(pi, pl)) 
@@ -163,7 +163,16 @@ def prepare_task2(root_dir, out_dir, img_size, nb_val, nb_test, raw_size):
             test_dataset_writer.write(full_name_vein + '\n')
         else:
             for pi, pl in patches:
-                train_dataset_writer.write(serialize_task2(pi, pl))
+                train_dataset_writer.write(serialize_task2(pi, pl))'''
+        if idx in val_idcs:
+            val_dataset_writer.write(serialize_task2(img.tobytes(), lbl.tobytes()))
+        elif idx in test_idcs:
+            full_name_leaf = full_name_leaf.replace('./', test_prefix)
+            full_name_vein = full_name_vein.replace('./', test_prefix)
+            test_dataset_writer.write(full_name_leaf + '\n')
+            test_dataset_writer.write(full_name_vein + '\n')
+        else:
+            train_dataset_writer.write(serialize_task2(img.tobytes(), lbl.tobytes()))
         print('%dth Image done, progress = %.2f%%.' % (idx, 100 * idx / nb_imgs), end='\r')
     
     train_dataset_writer.close()
