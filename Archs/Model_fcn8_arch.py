@@ -1,9 +1,6 @@
-import tensorflow as tf
-import os
-import pdb
-import numpy as np
-#import keras_applications.resnet50 as Resnet50
+import tensorflow as tf 
 
+#include two architecture FCN8  and FCN32
 class Model_fcn8(tf.keras.Model):
 
     '''
@@ -186,11 +183,3 @@ class Model_fcn32(tf.keras.Model):
         x = self.activ_1(x)
         
         return x
-
-if __name__ == '__main__':
-
-    tf.enable_eager_execution()
-    m = Model_fcn32()
-    x = tf.convert_to_tensor(np.zeros(shape=[2,128,128,3]))
-    y = m(x, True)
-    pdb.set_trace()
