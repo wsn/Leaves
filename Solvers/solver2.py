@@ -7,7 +7,6 @@ import tensorflow as tf
 
 from Archs import create_model
 
-
 class Solver2(object):
 
     def __init__(self, opt):
@@ -59,9 +58,9 @@ class Solver2(object):
         self.model = create_model(self.opt)
         
     
-    def loss(self, labels, logits):
+    def loss(self, labels, preds):
 
-        return tf.math.reduce_mean(tf.keras.losses.binary_crossentropy(labels, logits))
+        pass
     
     def metric(self, labels, logtis):
 
@@ -133,6 +132,8 @@ class Solver2(object):
             
             images = self._normalize_image(images)            
             
+            pdb.set_trace()
+
             with tf.GradientTape() as tape:
                 logits = self.model(images, True)
                 loss = self.loss(labels, logits)
