@@ -25,10 +25,10 @@ def define_net(opt):
         net = Model_resnet(opt['drop_rate'])
     elif which_model == 'MODEL_FCN8':
         from .Model_fcn8_arch import Model_fcn8
-        net = Model_fcn8(opt['num_classes'], opt['num_features'])
+        net = Model_fcn8(opt['num_features'])
     elif which_model == 'MODEL_FCN32':
         from .Model_fcn8_arch import Model_fcn32
-        net = Model_fcn32(opt['num_classes'], opt['num_features'])
+        net = Model_fcn32(opt['num_features'])
     else:
         raise NotImplementedError('Network [%s] is not recognized.' % which_model)
 

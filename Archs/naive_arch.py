@@ -28,7 +28,7 @@ class Naive(tf.keras.Model):
         self.max_pool3 = tf.keras.layers.MaxPooling2D(2, 2, 'same')
         self.conv4_1 = tf.keras.layers.Convolution2D(self.num_features * 4, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.conv4_2 = tf.keras.layers.Convolution2D(self.num_features * 4, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.drop = tf.keras.layers.Dropout(self.drop_rate)
+        #self.drop = tf.keras.layers.Dropout(self.drop_rate)
         self.upsample_3 = tf.keras.layers.UpSampling2D(2, interpolation='bilinear')
         self.conv3_3 = tf.keras.layers.Convolution2D(self.num_features * 4, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.conv3_4 = tf.keras.layers.Convolution2D(self.num_features * 4, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
@@ -38,7 +38,7 @@ class Naive(tf.keras.Model):
         self.upsample_1 = tf.keras.layers.UpSampling2D(2, interpolation='bilinear')
         self.conv1_3 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.conv1_4 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.conv_out = tf.keras.layers.Convolution2D(2, 1, 1, 'same', activation='softmax', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.conv_out = tf.keras.layers.Convolution2D(1, 1, 1, 'same', activation='sigmoid', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, x, training=True):
 
@@ -54,7 +54,7 @@ class Naive(tf.keras.Model):
         x3 = self.max_pool3(x2)
         x3 = self.conv4_1(x3)
         x3 = self.conv4_2(x3)
-        x3 = self.drop(x3, training)
+        #x3 = self.drop(x3, training)
         x3 = self.upsample_3(x3)
         x2 = tf.keras.layers.concatenate([x2, x3])
         x2 = self.conv3_3(x2)

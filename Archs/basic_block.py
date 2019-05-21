@@ -28,3 +28,18 @@ class ConvBNReLUBlock(tf.keras.Model):
             x = self.relu(x)
         
         return x
+    
+class HourglassBlock(tf.keras.Model):
+
+    def __init__(self, factor_down, num_features, initializer='he_normal', weight_decay=0):
+
+        super(HourglassBlock, self).__init__()
+
+        self.factor_down = factor_down
+        self.num_features = num_features
+
+        self.initializer = initializer
+        self.weight_decay = weight_decay
+        self.regularizer = tf.keras.regularizers.l2(weight_decay)
+
+        self.
