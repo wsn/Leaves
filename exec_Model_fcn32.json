@@ -1,0 +1,39 @@
+{
+    "task": "2",
+    "img_size" : 128,
+    "img_channels" : 3,
+    "cpu_threads": 8,
+    "is_training": true,
+
+    "datasets": {
+       "train":{
+            "dir":"./Dataprep/results/train2.tfrecord"
+       },
+       "val":{
+            "dir":"./Dataprep/results/val2.tfrecord"
+       },
+       "test":{
+           "dir":"./Dataprep/results/test2.txt"
+       }
+    },
+
+    "networks": {
+        "which_model": "MODEL_FCN32",
+        "num_features": 64 ,
+        "num_classes" : 2
+    },
+
+    "solver": {
+        "batch_size": 16,
+        "optimizer_type": "adam",
+        "lr_init": 1e-5,
+        "lr_decay": 0.5,
+        "decay_steps": 1000,
+        "eval_steps": 100,
+        "save_steps": 1000,
+        "max_steps": 10000,
+        "ckpt_dir": "./Models/",
+        "ckpt_id": 1,
+        "resume": false
+    }
+}
