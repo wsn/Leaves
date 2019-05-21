@@ -49,7 +49,7 @@ class Solver2(object):
         self.cpu_threads = self.opt['cpu_threads']
         self.train_dir = self.data_opt['train']['dir']
         self.train_dataset = tf.data.TFRecordDataset([self.train_dir], None, None, self.cpu_threads)
-        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads)
+        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads).map(self._augment, self.cpu_threads)
         self.train_dataset = self.train_dataset.repeat(-1).shuffle(5000).batch(self.batch_size).prefetch(self.batch_size)
         self.val_dir = self.data_opt['val']['dir']
         self.val_dataset = tf.data.TFRecordDataset([self.val_dir], None, None, self.cpu_threads)
@@ -111,6 +111,17 @@ class Solver2(object):
         image = tf.cast(image, tf.float32)
         
         return image, label
+    
+    def _augment(self, images, labels):
+
+        bundle = tf.concat([images, labels], axis=2)
+        bundle = tf.image.random_flip_left_right(bundle)
+        bundle = tf.image.random_flip_up_down(bundle)
+        images = bundle[:,:,0:3]
+        labels = bundle[:,:,3:]
+        images = tf.image.random_brightness(images, 50)
+
+        return images, labels
     
     def _normalize_image(self, image_in):
 

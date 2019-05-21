@@ -8,20 +8,24 @@ class Model_resnet(tf.keras.Model):
        Model_resnet： Resnet architecture for task 1 
     '''
 
-    def __init__(self, img_channels, width, height):
+    def __init__(self, drop_rate):
 
         super(Model_resnet, self).__init__()
         
-        self.img_channels = img_channels
-        self.width = width
-        self.height = height
-        self.model= Resnet_50(self.width,self.height,self.img_channels) 
-    
+        self.drop_rate = drop_rate
+        
+        self.conv_part = tf.keras.applications.ResNet50(include_top=False, weights=None, pooling='avg')
+        self.fc_part = tf.keras.layers.Dense(3, activation=None)
+        self.flatten = tf.keras.layers.Flatten()
+        self.drop = tf.keras.layers.Dropout(self.drop_rate)
        
     def call(self, x, training=True):
-        x = self.model(x,training)
+        x = self.conv_part(x,training)
+        x = self.flatten(x)
+        x = self.drop(x, training)
+        x = self.fc_part(x)
         return x
-
+'''
 class Conv2d_BN(tf.keras.Model):
 
     def __init__(self, nb_filter, kernel_size,strides=(1, 1), padding='same'):
@@ -29,7 +33,7 @@ class Conv2d_BN(tf.keras.Model):
         super(Conv2d_BN, self).__init__()
         
         self.conv1 = tf.keras.layers.Conv2D(nb_filter, kernel_size, padding=padding, strides=strides, activation='relu')
-        self.bn1 = tf.keras.layers.BatchNormalization(axis=3,fused=False)
+        self.bn1 = tf.keras.layers.BatchNormalization(axis=3)
     
     def call(self, x, training=True):
         x = self.conv1(x)
@@ -99,11 +103,11 @@ class Resnet_50(tf.keras.Model):
         x = self.zero(x)
         x = self.conv1(x,training)
         x = self.max(x)
-
+       
         x = self.bottle11(x,training,with_conv_shortcut=True)
         x = self.bottle12(x,training)
         x = self.bottle13(x,training)
-
+        
         x = self.bottle21(x,with_conv_shortcut=True)
         x = self.bottle22(x,training)
         x = self.bottle23(x,training)
@@ -119,13 +123,14 @@ class Resnet_50(tf.keras.Model):
         x = self.bottle41(x,training,with_conv_shortcut=True)
         x = self.bottle42(x,training)
         x = self.bottle43(x,training)
-
+        
         x = self.av1(x)
+        pdb.set_trace()
         x = self.fl1(x)
         x = self.dense1(x)
-
+        
         return x 
-
+'''
 
 
 

@@ -28,7 +28,7 @@ class Simple(tf.keras.Model):
         self.flatten = tf.keras.layers.Flatten()
         
         self.fc1 = tf.keras.layers.Dense(self.num_features * 4, activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.fc2 = tf.keras.layers.Dense(3, activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.fc2 = tf.keras.layers.Dense(3, activation=None, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, x, training=True):
         

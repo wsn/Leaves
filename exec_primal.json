@@ -19,10 +19,9 @@
     },
 
     "networks": {
-        "which_model": "NAIVE",
+        "which_model": "PRIMAL",
         "num_features": 64,
-        "weight_decay": 0,
-        "drop_rate": 0.5,
+        "weight_decay": 1e-4,
         "initializer": "he_normal"
     },
 
@@ -31,12 +30,12 @@
         "optimizer_type": "adam",
         "lr_init": 1e-4,
         "lr_decay": 0.5,
-        "decay_steps": 5000,
-        "eval_steps": 200,
+        "decay_steps": 10000,
+        "eval_steps": 500,
         "save_steps": 1000,
         "max_steps": 100000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 1,
-        "resume": false
+        "ckpt_id": 2,
+        "resume": true
     }
 }
