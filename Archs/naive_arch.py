@@ -38,7 +38,7 @@ class Naive(tf.keras.Model):
         self.upsample_1 = tf.keras.layers.UpSampling2D(2, interpolation='bilinear')
         self.conv1_3 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.conv1_4 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
-        self.conv_out = tf.keras.layers.Convolution2D(1, 1, 1, 'same', activation='sigmoid', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
+        self.conv_out = tf.keras.layers.Convolution2D(2, 1, 1, 'same', activation='softmax', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
 
     def call(self, x, training=True):
 
