@@ -26,7 +26,7 @@
     "solver": {
         "batch_size": 16,
         "optimizer_type": "adam",
-        "lr_init": 5e-5,
+        "lr_init": 1e-5,
         "lr_decay": 0.5,
         "decay_steps": 10000,
         "eval_steps": 200,

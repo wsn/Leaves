@@ -21,7 +21,7 @@
     "networks": {
         "which_model": "NAIVE",
         "num_features": 64,
-        "weight_decay": 1e-2,
+        "weight_decay": 1e-3,
         "drop_rate": 0.5,
         "initializer": "he_normal"
     },
@@ -29,14 +29,14 @@
     "solver": {
         "batch_size": 16,
         "optimizer_type": "adam",
-        "lr_init": 1e-4,
+        "lr_init": 1e-5,
         "lr_decay": 0.5,
         "decay_steps": 10000,
         "eval_steps": 500,
         "save_steps": 1000,
         "max_steps": 100000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 1,
+        "ckpt_id": 7,
         "resume": true
     }
 }

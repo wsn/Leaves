@@ -26,14 +26,14 @@
     "solver": {
         "batch_size": 16,
         "optimizer_type": "adam",
-        "lr_init": 1e-5,
+        "lr_init": 1e-4,
         "lr_decay": 0.5,
-        "decay_steps": 1000,
-        "eval_steps": 100,
+        "decay_steps": 10000,
+        "eval_steps": 500,
         "save_steps": 1000,
-        "max_steps": 10000,
+        "max_steps": 100000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 1,
+        "ckpt_id": 6,
         "resume": false
     }
 }
