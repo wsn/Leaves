@@ -31,12 +31,12 @@
         "optimizer_type": "adam",
         "lr_init": 1e-4,
         "lr_decay": 0.5,
-        "decay_steps": 20000,
+        "decay_steps": 10000,
         "eval_steps": 500,
         "save_steps": 1000,
         "max_steps": 100000,
         "ckpt_dir": "./Models/",
         "ckpt_id": 1,
-        "resume": false
+        "resume": true
     }
 }
