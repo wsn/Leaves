@@ -127,9 +127,9 @@ class Block3(tf.keras.Model):
         self.conv5_3 = tf.keras.layers.Convolution2D(self.num_features * 8, 3, 1, 'same', activation='relu')
         self.max_pool5 = tf.keras.layers.MaxPooling2D(2, 2, 'same')      
         self.fc6 = tf.keras.layers.Convolution2D(4096, 7, 1, 'same', activation='relu')
-        self.dropout_1=tf.keras.layers.Dropout(0.5)
+        #self.dropout_1=tf.keras.layers.Dropout(0.5)
         self.fc7 = tf.keras.layers.Convolution2D(4096, 1, 1, 'same', activation='relu')
-        self.dropout_2=tf.keras.layers.Dropout(0.5)
+        #self.dropout_2=tf.keras.layers.Dropout(0.5)
         self.score_fr = tf.keras.layers.Convolution2D(2, 1, 1, 'same', activation='relu',kernel_initializer='he_normal',name = 'score_fr')
         
     def call(self, x, training=True):
@@ -138,9 +138,9 @@ class Block3(tf.keras.Model):
         x = self.conv5_3(x)
         x = self.max_pool5(x)
         x = self.fc6(x)
-        x = self.dropout_1(x, training)
+        #x = self.dropout_1(x, training)
         x = self.fc7(x)
-        x = self.dropout_2(x, training)
+        #x = self.dropout_2(x, training)
         x = self.score_fr(x)
                 
         return x
