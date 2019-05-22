@@ -20,6 +20,9 @@ def define_net(opt):
     elif which_model == 'PRIMAL':
         from .primal_arch import Primal
         net = Primal(opt['num_features'], opt['weight_decay'], opt['initializer'])
+    elif which_model == 'HOURGLASS':
+        from .hourglass_arch import Hourglass
+        net = Hourglass(opt['num_features'], opt['initializer'], opt['weight_decay'])
     elif which_model == 'MODEL_RESNET':
         from .Model_resnet_arch import Model_resnet
         net = Model_resnet(opt['drop_rate'])

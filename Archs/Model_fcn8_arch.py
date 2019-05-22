@@ -1,4 +1,5 @@
 import tensorflow as tf 
+import pdb
 
 #include two architecture FCN8  and FCN32
 class Model_fcn8(tf.keras.Model):
@@ -13,37 +14,32 @@ class Model_fcn8(tf.keras.Model):
 
         self.num_features = num_features
         
-        self.block1= Block1(self.num_features)
-        self.block2= Block2(self.num_features)
-        self.block3= Block3(self.num_features)
+        self.block1 = Block1(self.num_features)
+        self.block2 = Block2(self.num_features)
+        self.block3 = Block3(self.num_features)
         
-        self.change_score2 = tf.keras.layers.Conv2DTranspose(2, 2, 2, padding='valid', activation=None)
+        self.up8to16 = tf.keras.layers.Convolution2DTranspose(self.num_features * 8, 4, 2, 'same', activation=None)
+        self.up16to32 = tf.keras.layers.Convolution2DTranspose(self.num_features * 4, 4, 2, 'same', activation=None)
 
-        self.score_pool4 = tf.keras.layers.Convolution2D(2,1, 1, 'same', activation='relu',kernel_initializer='he_normal')
-        self.score4 = tf.keras.layers.Conv2DTranspose(2, 2, 2, padding='valid', activation=None)
+        self.up32to256 = tf.keras.layers.Convolution2DTranspose(self.num_features * 2, 4, 8, 'same', activation=None)
 
-        self.score_pool3 = tf.keras.layers.Convolution2D(2 ,1, 1, 'same', activation='relu',kernel_initializer='he_normal')
-        self.up1 = tf.keras.layers.Conv2DTranspose(2, 8, 8, padding='valid', activation=None)
-        self.activ_1 = tf.keras.layers.Activation('softmax')
-
+        self.conv_out1 = tf.keras.layers.Convolution2D(self.num_features, 1, 1, 'same', activation=None)
+        self.conv_out2 = tf.keras.layers.Convolution2D(2, 3, 1, 'same', activation='softmax')
 
     def call(self, x, training=True):
+        
         x3 = self.block1(x, training)
         x2 = self.block2(x3, training)
         x1 = self.block3(x2, training)
-        
-        #x1 = self.fcn32.get_layer('score_fr').output
-        x1 = self.change_score2(x1)
-        #x2 = self.fcn32.get_layer('max_pool4').output
-        x2 = self.score_pool4(x2)
-        x4 = x1 + x2
-        x4 = self.score4(x4)
-        #x3 = self.fcn32.get_layer('max_pool3').output
-        x3 =self.score_pool3(x3)
-        x = x3 + x4
 
-        x = self.up1(x)
-        x = self.activ_1(x)
+        x1 = self.up8to16(x1)
+        x2 = x1 + x2
+        x2 = self.up16to32(x2)
+        x3 = x2 + x3
+        x3 = self.up32to256(x3)
+
+        x = self.conv_out1(x3)
+        x = self.conv_out2(x)
         
         return x
 
@@ -122,26 +118,16 @@ class Block3(tf.keras.Model):
 
         self.num_features = num_features
 
-        self.conv5_1 = tf.keras.layers.Convolution2D(self.num_features * 8, 3, 1, 'same', activation='relu')
-        self.conv5_2 = tf.keras.layers.Convolution2D(self.num_features * 8, 3, 1, 'same', activation='relu')
-        self.conv5_3 = tf.keras.layers.Convolution2D(self.num_features * 8, 3, 1, 'same', activation='relu')
+        self.conv5_1 = tf.keras.layers.Convolution2D(self.num_features * 16, 3, 1, 'same', activation='relu')
+        self.conv5_2 = tf.keras.layers.Convolution2D(self.num_features * 16, 3, 1, 'same', activation='relu')
+        self.conv5_3 = tf.keras.layers.Convolution2D(self.num_features * 16, 3, 1, 'same', activation='relu')
         self.max_pool5 = tf.keras.layers.MaxPooling2D(2, 2, 'same')      
-        self.fc6 = tf.keras.layers.Convolution2D(4096, 7, 1, 'same', activation='relu')
-        #self.dropout_1=tf.keras.layers.Dropout(0.5)
-        self.fc7 = tf.keras.layers.Convolution2D(4096, 1, 1, 'same', activation='relu')
-        #self.dropout_2=tf.keras.layers.Dropout(0.5)
-        self.score_fr = tf.keras.layers.Convolution2D(2, 1, 1, 'same', activation='relu',kernel_initializer='he_normal',name = 'score_fr')
         
     def call(self, x, training=True):
         x = self.conv5_1(x)
         x = self.conv5_2(x)
         x = self.conv5_3(x)
         x = self.max_pool5(x)
-        x = self.fc6(x)
-        #x = self.dropout_1(x, training)
-        x = self.fc7(x)
-        #x = self.dropout_2(x, training)
-        x = self.score_fr(x)
                 
         return x
 
@@ -157,9 +143,9 @@ class Model_fcn32(tf.keras.Model):
 
         self.num_features = num_features
         
-        self.block1= Block1(self.num_features)
-        self.block2= Block2(self.num_features)
-        self.block3= Block3(self.num_features)
+        self.block1 = Block1(self.num_features)
+        self.block2 = Block2(self.num_features)
+        self.block3 = Block3(self.num_features)
         self.score2 = tf.keras.layers.Conv2DTranspose(2, kernel_size=(32, 32), strides=(32, 32), padding='valid', activation=None)
         self.activ_1 = tf.keras.layers.Activation('softmax')
    

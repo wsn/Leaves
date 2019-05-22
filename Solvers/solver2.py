@@ -49,7 +49,7 @@ class Solver2(object):
         self.cpu_threads = self.opt['cpu_threads']
         self.train_dir = self.data_opt['train']['dir']
         self.train_dataset = tf.data.TFRecordDataset([self.train_dir], None, None, self.cpu_threads)
-        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads).map(self._augment, self.cpu_threads)
+        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads)
         self.train_dataset = self.train_dataset.repeat(-1).shuffle(5000).batch(self.batch_size).prefetch(self.batch_size)
         self.val_dir = self.data_opt['val']['dir']
         self.val_dataset = tf.data.TFRecordDataset([self.val_dir], None, None, self.cpu_threads)
@@ -74,20 +74,20 @@ class Solver2(object):
         
         return pixelwise_bce
 
-    def _dice_metric(self, labels, preds):
+    def _iou_metric(self, labels, preds):
 
         #pdb.set_trace()
-        eps = 1e-3
+        eps = 1e-5
         preds = tf.math.sign(preds - 0.5) * 0.5 + 0.5
-        numerator = tf.math.reduce_sum(labels * preds)
-        denominator = tf.math.reduce_sum(labels + preds)
-        dice_metric = 2.0 * (numerator + eps) / (denominator + eps)
+        intersection = tf.math.abs(labels * preds)
+        union = labels + preds - intersection
+        iou_metric = tf.math.divide(tf.math.reduce_sum(intersection) + eps, tf.math.reduce_sum(union) + eps)
 
-        return dice_metric
+        return iou_metric
 
     def metric(self, labels, preds):
 
-        return self._dice_metric(labels, preds)
+        return self._iou_metric(labels, preds)
 
     def loss(self, labels, preds):
 
@@ -176,33 +176,33 @@ class Solver2(object):
             with tf.GradientTape() as tape:
                 preds = self.model(images, True)
                 foreground_preds, background_preds = preds[:,:,:,0:1], preds[:,:,:,1:]
-                loss = self.loss(foreground_labels, foreground_preds) + self.loss(background_labels, background_preds)
+                loss = self.loss(foreground_labels, foreground_preds) * 0.9 + self.loss(background_labels, background_preds) * 0.1
             
-            train_fg_dice = self.metric(foreground_labels, foreground_preds)
-            train_bg_dice = self.metric(background_labels, background_preds)
+            train_fg_iou = self.metric(foreground_labels, foreground_preds)
+            train_bg_iou = self.metric(background_labels, background_preds)
             
             grads = tape.gradient(loss, self.model.variables)
             
             self.optimizer.apply_gradients(zip(grads, self.model.variables), global_step=self.global_step)
             
-            print('[Step %d] Training loss = %.4f, Training ForegroundDice = %.2f, Training BackgroundDice = %.2f.' % (self.global_step, loss, train_fg_dice, train_bg_dice), end='\r')
+            print('[Step %d] Training loss = %.4f, Training ForegroundIOU = %.2f, Training BackgroundIOU = %.2f.' % (self.global_step, loss, train_fg_iou, train_bg_iou), end='\r')
             
             if glsp % self.eval_steps == 0:
                 
                 print('\n')
-                val_fg_dice = []
-                val_bg_dice = []
+                val_fg_iou = []
+                val_bg_iou = []
                 for val_img, val_lbl in self.val_dataset:
                     
                     val_img = self._normalize_image(val_img)
                     val_prd = self.model(val_img, False)
-                    val_fg_dice.append(self.metric(1 - val_lbl, val_prd[:,:,:,0:1]).numpy())
-                    val_bg_dice.append(self.metric(val_lbl, val_prd[:,:,:,1:]).numpy())
+                    val_fg_iou.append(self.metric(1 - val_lbl, val_prd[:,:,:,0:1]).numpy())
+                    val_bg_iou.append(self.metric(val_lbl, val_prd[:,:,:,1:]).numpy())
 
-                val_fg_dice = np.array(val_fg_dice).mean()
-                val_bg_dice = np.array(val_bg_dice).mean()
+                val_fg_iou = np.array(val_fg_iou).mean()
+                val_bg_iou = np.array(val_bg_iou).mean()
 
-                print('Validation ForegroundDice = %.2f, Validation BackgroundDice = %.2f.' % (val_fg_dice, val_bg_dice))
+                print('Validation ForegroundIOU = %.2f, Validation BackgroundIOU = %.2f.' % (val_fg_iou, val_bg_iou))
 
             if glsp % self.save_steps == 0:
                 self._save_checkpoint()
@@ -309,22 +309,22 @@ class Solver2(object):
             pred = self.model(image, False)
             pred_fg = pred[:,:,:,0:1]
 
-            dice_fg = self.metric(1 - label, pred_fg)
+            iou_fg = self.metric(1 - label, pred_fg)
             
             image = self._denormalize_image(image)
             prediction = self._hard_predict(1.0 - pred_fg)
             self._show_all(image, label, prediction)
             
-            dice_fg = dice_fg.numpy()
+            iou_fg = iou_fg.numpy()
 
-            test_acc.append(dice_fg)
+            test_acc.append(iou_fg)
 
             prog = idx / len(test_fns) * 100
-            print('[%dth Sample] Testing Dice = %.2f, Progress = %.2f%%.' % ((idx + 1), dice_fg, prog), end='\r')
+            print('[%dth Sample] TestingIOU = %.2f, Progress = %.2f%%.' % ((idx + 1), iou_fg, prog), end='\r')
         
         test_acc = np.array(test_acc).mean()
         
         print('\n')
-        print('Total Dice = %.2f.' % test_acc)
+        print('Total IOU = %.2f.' % test_acc)
         
         print('===> Testing ends.')
