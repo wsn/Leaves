@@ -61,10 +61,12 @@ class Solver1(object):
     
     def loss(self, labels, logits):
 
+        # Categorical Cross Entropy Loss
         return tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(labels, logits, True))
     
     def metric(self, labels, logtis):
 
+        # Accuracy
         preds = tf.math.softmax(logtis)
         return tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_accuracy(labels, preds))
 
@@ -88,14 +90,6 @@ class Solver1(object):
     def _normalize_image(self, image_in):
 
         image_out = image_in / 127.5 - 1
-
-        return image_out
-
-    def _denormalize_image(self, image_in):
-
-        image_out = (image_in + 1) * 127.5
-        image_out[image_out > 255.0] = 255.0
-        image_out[image_out < 0.0] = 0.0
 
         return image_out
     

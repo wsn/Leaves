@@ -15,7 +15,10 @@
        },
        "test":{
            "dir":"./Dataprep/results/test1.txt"
-       }
+       },
+       "play":{
+            "dir":"./Plays/task1.txt"
+        }
     },
 
     "networks": {
