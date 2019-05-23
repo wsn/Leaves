@@ -103,7 +103,7 @@ class Solver1(object):
 
         images = tf.image.random_flip_left_right(images)
         images = tf.image.random_flip_up_down(images)
-        #images = tf.image.random_brightness(images, 127.5)
+        #images = tf.image.random_brightness(images, 50)
 
         return images, labels
 

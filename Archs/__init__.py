@@ -16,17 +16,19 @@ def define_net(opt):
         net = Simple(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'NAIVE':
         from .naive_arch import Naive
-        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'])
+        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'], opt['drop_rate'])
+    elif which_model == 'HOURGLASS':
+        from .hourglass_arch import Hourglass
+        net = Hourglass(opt['num_features'], opt['initializer'], opt['weight_decay'])
     elif which_model == 'MODEL_RESNET':
         from .Model_resnet_arch import Model_resnet
-        net = Model_resnet(opt['img_channels'],opt['width'],opt['height'])
+        net = Model_resnet(opt['drop_rate'])
     elif which_model == 'MODEL_FCN8':
         from .Model_fcn8_arch import Model_fcn8
-        from .Model_fcn8_arch import Model_fcn32
-        net = Model_fcn8(opt['num_classes'], opt['num_features'])
+        net = Model_fcn8(opt['num_features'])
     elif which_model == 'MODEL_FCN32':
         from .Model_fcn8_arch import Model_fcn32
-        net = Model_fcn32(opt['num_classes'], opt['num_features'])
+        net = Model_fcn32(opt['num_features'])
     else:
         raise NotImplementedError('Network [%s] is not recognized.' % which_model)
 

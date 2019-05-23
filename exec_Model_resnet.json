@@ -3,7 +3,8 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": true,
+    "is_training": "train",
+    "gpu_id": "6",
 
     "datasets": {
        "train":{
@@ -19,22 +20,20 @@
 
     "networks": {
         "which_model": "MODEL_RESNET",
-        "img_channels": 3,
-        "width": 128,
-        "height": 128
+        "drop_rate": 0.5
     },
 
     "solver": {
-        "batch_size": 64,
+        "batch_size": 32,
         "optimizer_type": "adam",
-        "lr_init": 1e-5,
+        "lr_init": 1e-4,
         "lr_decay": 0.5,
         "decay_steps": 2000,
         "eval_steps": 200,
         "save_steps": 1000,
         "max_steps": 10000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 1,
+        "ckpt_id": 3,
         "resume": false
     }
 }

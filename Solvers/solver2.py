@@ -2,6 +2,7 @@ import os
 import pdb
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
@@ -19,6 +20,7 @@ class Solver2(object):
         # Image Properties
         self.img_size = opt['img_size']
         self.img_channels = opt['img_channels']
+        self.big_size = 1024
 
         # Training Options
         self.batch_size = self.train_opt['batch_size']
@@ -48,7 +50,7 @@ class Solver2(object):
         self.cpu_threads = self.opt['cpu_threads']
         self.train_dir = self.data_opt['train']['dir']
         self.train_dataset = tf.data.TFRecordDataset([self.train_dir], None, None, self.cpu_threads)
-        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads)
+        self.train_dataset = self.train_dataset.map(self._parse_function, self.cpu_threads).map(self._augment, self.cpu_threads)
         self.train_dataset = self.train_dataset.repeat(-1).shuffle(5000).batch(self.batch_size).prefetch(self.batch_size)
         self.val_dir = self.data_opt['val']['dir']
         self.val_dataset = tf.data.TFRecordDataset([self.val_dir], None, None, self.cpu_threads)
@@ -65,24 +67,53 @@ class Solver2(object):
         dice_loss = 1.0 - 2.0 * (numerator + eps) / (denominator + eps)
 
         return dice_loss
+    
+    def _pixelwise_cross_entropy_loss(self, labels, preds):
 
+        pixelwise_bce = tf.keras.losses.binary_crossentropy(labels, preds)
+        pixelwise_bce = pixelwise_bce * tf.squeeze(labels)
+        pixelwise_bce = tf.math.reduce_mean(pixelwise_bce)
+        
+        return pixelwise_bce
+
+    def _iou_metric(self, labels, preds):
+
+        #pdb.set_trace()
+        eps = 1e-5
+        preds = tf.math.sign(preds - 0.5) * 0.5 + 0.5
+        intersection = tf.math.abs(labels * preds)
+        union = labels + preds - intersection
+        iou_metric = tf.math.divide(tf.math.reduce_sum(intersection) + eps, tf.math.reduce_sum(union) + eps)
+
+        return iou_metric
+    
     def _dice_metric(self, labels, preds):
 
-        eps = 1e-3
+        eps = 1e-5
         preds = tf.math.sign(preds - 0.5) * 0.5 + 0.5
-        numerator = tf.math.reduce_sum(labels * preds)
-        denominator = tf.math.reduce_sum(labels + preds)
-        dice_metric = 2.0 * (numerator + eps) / (denominator + eps)
+        num = tf.math.abs(labels * preds)
+        den = labels + preds
+        dice_metric = tf.math.divide(tf.math.reduce_sum(num) + eps, tf.math.reduce_sum(den) + eps) * 2
 
         return dice_metric
+    
+    def _acc_metric(self, labels, preds):
+
+        acc_metric = tf.keras.metrics.binary_accuracy(labels, preds)
+        acc_metric = acc_metric * tf.squeeze(labels)
+        acc_metric = tf.math.reduce_mean(acc_metric)
+
+        return acc_metric
 
     def metric(self, labels, preds):
 
+        #return self._iou_metric(labels, preds)
         return self._dice_metric(labels, preds)
 
     def loss(self, labels, preds):
 
         return self._dice_loss(labels, preds)
+        # return self._pixelwise_cross_entropy_loss(labels, preds)
 
     def _parse_function(self, example_proto):
         
@@ -102,6 +133,17 @@ class Solver2(object):
         
         return image, label
     
+    def _augment(self, images, labels):
+
+        bundle = tf.concat([images, labels], axis=2)
+        bundle = tf.image.random_flip_left_right(bundle)
+        bundle = tf.image.random_flip_up_down(bundle)
+        images = bundle[:,:,0:3]
+        labels = bundle[:,:,3:]
+        #images = tf.image.random_brightness(images, 50)
+
+        return images, labels
+    
     def _normalize_image(self, image_in):
 
         image_out = image_in / 127.5 - 1
@@ -110,9 +152,8 @@ class Solver2(object):
 
     def _denormalize_image(self, image_in):
 
-        image_out = (image_in + 1) * 127.5
-        image_out[image_out > 255.0] = 255.0
-        image_out[image_out < 0.0] = 0.0
+        image_out = (image_in + 1) / 2
+        image_out = tf.image.convert_image_dtype(image_out, tf.uint8, True)
 
         return image_out
 
@@ -131,6 +172,14 @@ class Solver2(object):
         print('===> Loading checkpoint from [%s]' % checkpoint_dir)
         ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=self.model, optimizer_step=self.global_step)
         ckpt.restore(tf.train.latest_checkpoint(checkpoint_dir))
+
+    def _combine_sobel_prior(self, images):
+        
+        gray = tf.image.rgb_to_grayscale(images)
+        edges = tf.image.sobel_edges(gray)
+        edges = tf.squeeze(edges)
+
+        return tf.concat([images, edges], axis=3)
 
     def train(self):
         
@@ -151,7 +200,7 @@ class Solver2(object):
             background_labels = labels
             foreground_labels = 1 - labels
             
-            images = self._normalize_image(images)            
+            images = self._normalize_image(images)
 
             with tf.GradientTape() as tape:
                 preds = self.model(images, True)
@@ -191,22 +240,94 @@ class Solver2(object):
 
         print('===> Training ends.')
 
-
-    def _chop_forward(self, ori_image):
-
-        obj_h, obj_w = 1024, 1024
-
-        
         
     def _load_raw_image(self, path):
 
         img = cv2.imread(path)
+        img = cv2.resize(img, (self.big_size, self.big_size))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (self.img_size, self.img_size), interpolation=cv2.INTER_LINEAR)
-        img = tf.Variable(img, dtype=tf.float32)
-        img = tf.reshape(img, [-1, self.img_size, self.img_size, self.img_channels])
+        nh, nw = self.big_size // self.img_size, self.big_size // self.img_size
+        oshape = img.shape
+        img = tf.convert_to_tensor(img)
+        imgs = []
+        for i in range(nh):
+            for j in range(nw):
+                imgs.append(img[i * self.img_size:(i + 1) * self.img_size, j * self.img_size:(j + 1) * self.img_size,:])
+        imgs = tf.stack(imgs)
+        imgs = tf.cast(imgs, tf.float32)
 
-        return img
+        return imgs, oshape
+    
+    def _load_raw_label(self, path):
+
+        lbl = cv2.imread(path)
+        lbl = cv2.resize(lbl, (self.big_size, self.big_size))
+        nh, nw = self.big_size // self.img_size, self.big_size // self.img_size
+        if lbl.shape[2] > 3:
+            lbl = cv2.cvtColor(lbl, cv2.COLOR_BGRA2BGR)
+        lbl = cv2.cvtColor(lbl, cv2.COLOR_BGR2GRAY)
+        lbl[lbl > 127.5] = 255.0
+        lbl[lbl < 127.5] = 0.0
+        lbls = []
+        lbl = np.reshape(lbl, [self.big_size, self.big_size, 1])
+        for i in range(nh):
+            for j in range(nw):
+                lbls.append(lbl[i * self.img_size:(i + 1) * self.img_size, j * self.img_size:(j + 1) * self.img_size,:])
+        lbls = tf.stack(lbls)
+        lbls = tf.cast(lbls, tf.float32)
+
+        return lbls
+
+    def _show_image(self, img_tensor):
+
+        n, h, w, c = img_tensor.shape[0], img_tensor.shape[1], img_tensor.shape[2], img_tensor.shape[3]
+
+        img_tensor = tf.reshape(img_tensor, [h, w, c])
+        img = img_tensor.numpy().astype(np.uint8)
+        if c == 1:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        plt.figure()
+        plt.imshow(img)
+        plt.show()
+    
+    def _show_all(self, img, lbl, prd):
+        
+        lbl = lbl.astype(np.uint8)
+        prd = prd.astype(np.uint8)
+        img = img.astype(np.uint8)
+
+        lbl = cv2.cvtColor(lbl, cv2.COLOR_GRAY2RGB)
+        prd = cv2.cvtColor(prd, cv2.COLOR_GRAY2RGB)
+
+        plt.figure(figsize=(10, 6))
+        plt.subplot(131)
+        plt.imshow(img)
+        plt.subplot(132)
+        plt.imshow(prd)
+        plt.subplot(133)
+        plt.imshow(lbl)
+        plt.show()
+
+    def _hard_predict(self, pred):
+
+        hard_map = tf.math.sign(pred - 0.5) * 0.5 + 0.5
+        hard_map = tf.image.convert_image_dtype(hard_map, tf.uint8, True)
+
+        return hard_map
+    
+    def _reconstruct_image(self, images):
+
+        nh, nw = self.big_size // self.img_size, self.big_size // self.img_size
+
+        img = images.numpy()
+
+        reconstructed = np.zeros([self.big_size, self.big_size, images.shape[-1]])
+
+        for i in range(nh):
+            for j in range(nw):
+                reconstructed[i * self.img_size:(i + 1) * self.img_size, j * self.img_size:(j + 1) * self.img_size,:] = img[i * nw + j,:,:,:]
+        
+        return reconstructed
 
     def test(self):
 
@@ -220,29 +341,42 @@ class Solver2(object):
             test_fns = test_list.readlines()
             test_fns = list(map(lambda x: x.strip(), test_fns))
         
-        test_fns = sorted(test_fns)
-        test_acc = np.zeros([len(test_fns)])
-        for idx, test_fn in enumerate(test_fns):
+        #test_fns = sorted(test_fns)
+        test_acc = []
+        for idx in range(0, len(test_fns), 2):
             
-            splitted = test_fn.split(' ')
-            label = tf.Variable(int(splitted[-1]))
-            label = tf.reshape(label, [-1, 1])
-            fname = ' '.join(splitted[:-1])
+            img_name = test_fns[idx]
+            lbl_name = test_fns[idx + 1]
             
-            image = self._load_raw_image(fname)
+            image, oshape = self._load_raw_image(img_name)
+            label = self._load_raw_label(lbl_name)
+
             image = self._normalize_image(image)
-            logit = self.model(image, False)
             
-            acc = self.metric(label, logit) * 100
+            pred = self.model(image, False)
+            pred_fg = pred[:,:,:,0:1]
+
+            dice_fg = self.metric(1 - label, pred_fg)
             
-            test_acc[idx] = acc
+            image = self._denormalize_image(image)
+            prediction = self._hard_predict(1.0 - pred_fg)
+            
+            image = self._reconstruct_image(image)
+            label = self._reconstruct_image(label)
+            prediction = self._reconstruct_image(prediction)
+
+            self._show_all(image, label, prediction)
+            
+            dice_fg = dice_fg.numpy()
+
+            test_acc.append(dice_fg)
 
             prog = idx / len(test_fns) * 100
-            print('[%dth Sample] Testing Accuracy = %.2f%%, Progress = %.2f%%.' % ((idx + 1), acc.numpy(), prog), end='\r')
+            print('[%dth Sample] TestingDice = %.2f, Progress = %.2f%%.' % ((idx + 1), dice_fg, prog), end='\r')
         
-        test_acc = test_acc.mean()
+        test_acc = np.array(test_acc).mean()
         
         print('\n')
-        print('Total Accuracy = %.2f%%.' % test_acc)
+        print('Total dice = %.2f.' % test_acc)
         
         print('===> Testing ends.')
