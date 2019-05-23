@@ -15,7 +15,7 @@ class Model_resnet(tf.keras.Model):
         self.drop_rate = drop_rate
         
         self.conv_part = tf.keras.applications.ResNet50(include_top=False, weights=None, pooling='avg')
-        tf.keras.applications.DenseNet121()
+
         self.fc_part = tf.keras.layers.Dense(3, activation=None)
         self.flatten = tf.keras.layers.Flatten()
         self.drop = tf.keras.layers.Dropout(self.drop_rate)

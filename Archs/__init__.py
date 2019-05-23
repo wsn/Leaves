@@ -17,9 +17,6 @@ def define_net(opt):
     elif which_model == 'NAIVE':
         from .naive_arch import Naive
         net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'], opt['drop_rate'])
-    elif which_model == 'PRIMAL':
-        from .primal_arch import Primal
-        net = Primal(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'HOURGLASS':
         from .hourglass_arch import Hourglass
         net = Hourglass(opt['num_features'], opt['initializer'], opt['weight_decay'])
