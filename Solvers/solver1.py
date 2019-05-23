@@ -222,3 +222,29 @@ class Solver1(object):
         print('Total Accuracy = %.2f%%.' % test_acc)
         
         print('===> Testing ends.')
+
+    def play(self):
+
+        print('===> Show results .')
+        print('\n')
+        print('0:´ú±í¶¬Çà 1£º´ú±í ×Ï¶¡Ïã  2£º´ú±í ÎåÒ¶ÅÀÉ½»¢')
+
+        self._load_checkpoint()
+
+        test_list_path = self.data_opt['play']['dir']
+
+        with open(test_list_path, 'r') as test_list:
+            test_fns = test_list.readlines()
+            test_fns = list(map(lambda x: x.strip(), test_fns))
+        
+        for idx, test_fn in enumerate(test_fns):
+            
+            image = self._load_raw_image(test_fn)
+            image = self._normalize_image(image)
+            logit = self.model(image, False)
+            
+            prog = idx / len(test_fns) * 100
+            print('[%dth image] predict class = %d, Progress = %.2f%%.' % ((idx + 1),tf.math.softmax(logit) , prog), end='\r')
+        
+        print('\n')
+        print('===> predict ends.')
