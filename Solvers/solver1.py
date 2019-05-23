@@ -103,7 +103,6 @@ class Solver1(object):
 
         images = tf.image.random_flip_left_right(images)
         images = tf.image.random_flip_up_down(images)
-        #images = tf.image.random_brightness(images, 50)
 
         return images, labels
 
@@ -222,12 +221,20 @@ class Solver1(object):
         print('Total Accuracy = %.2f%%.' % test_acc)
         
         print('===> Testing ends.')
+    
+    def _hard_predict(self, logit):
+        
+        logit = tf.squeeze(logit)
+        pred = tf.math.softmax(logit)
+        class_id = tf.math.argmax(pred).numpy()
+        prob = pred[class_id].numpy()
+
+        return class_id, prob
 
     def play(self):
 
-        print('===> Show results .')
+        print('===> Playing Starts .')
         print('\n')
-        print('0:´ú±í¶¬Çà 1£º´ú±í ×Ï¶¡Ïã  2£º´ú±í ÎåÒ¶ÅÀÉ½»¢')
 
         self._load_checkpoint()
 
@@ -242,9 +249,10 @@ class Solver1(object):
             image = self._load_raw_image(test_fn)
             image = self._normalize_image(image)
             logit = self.model(image, False)
+            class_id, prob = self._hard_predict(logit)
+            prob = prob * 100
             
-            prog = idx / len(test_fns) * 100
-            print('[%dth image] predict class = %d, Progress = %.2f%%.' % ((idx + 1),tf.math.softmax(logit) , prog), end='\r')
+            print('[%s] Prediction class id : %d, Confidence probablity : %.2f%%.' % (test_fn, class_id, prob))
         
         print('\n')
-        print('===> predict ends.')
+        print('===> Playing ends.')

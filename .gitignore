@@ -5,9 +5,13 @@
 *.jpeg
 *.txt
 *.tfrecord
+*.rar
 
 # Compiled 
 __pycache__
 
 # Models
 Models/*
+
+# Tester
+Plays/*
