@@ -7,7 +7,6 @@ import tensorflow as tf
 
 from Archs import create_model
 
-
 class Solver1(object):
 
     def __init__(self, opt):

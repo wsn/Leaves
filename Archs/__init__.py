@@ -14,9 +14,9 @@ def define_net(opt):
     if which_model == 'SIMPLEVGG':
         from .simplevgg_arch import SimpleVGG
         net = SimpleVGG(opt['num_features'], opt['weight_decay'], opt['initializer'])
-    elif which_model == 'NAIVE':
+    elif which_model == 'SIMPLEUNET':
         from .simpleunet_arch import SimpleUNet
-        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'])
+        net = SimpleUNet(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'HOURGLASS':
         from .hourglass_arch import Hourglass
         net = Hourglass(opt['num_features'], opt['initializer'], opt['weight_decay'])

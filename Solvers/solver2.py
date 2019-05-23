@@ -68,25 +68,6 @@ class Solver2(object):
 
         return dice_loss
     
-    def _pixelwise_cross_entropy_loss(self, labels, preds):
-
-        pixelwise_bce = tf.keras.losses.binary_crossentropy(labels, preds)
-        pixelwise_bce = pixelwise_bce * tf.squeeze(labels)
-        pixelwise_bce = tf.math.reduce_mean(pixelwise_bce)
-        
-        return pixelwise_bce
-
-    def _iou_metric(self, labels, preds):
-
-        #pdb.set_trace()
-        eps = 1e-5
-        preds = tf.math.sign(preds - 0.5) * 0.5 + 0.5
-        intersection = tf.math.abs(labels * preds)
-        union = labels + preds - intersection
-        iou_metric = tf.math.divide(tf.math.reduce_sum(intersection) + eps, tf.math.reduce_sum(union) + eps)
-
-        return iou_metric
-    
     def _dice_metric(self, labels, preds):
 
         eps = 1e-5
@@ -96,25 +77,15 @@ class Solver2(object):
         dice_metric = tf.math.divide(tf.math.reduce_sum(num) + eps, tf.math.reduce_sum(den) + eps) * 2
 
         return dice_metric
-    
-    def _acc_metric(self, labels, preds):
-
-        acc_metric = tf.keras.metrics.binary_accuracy(labels, preds)
-        acc_metric = acc_metric * tf.squeeze(labels)
-        acc_metric = tf.math.reduce_mean(acc_metric)
-
-        return acc_metric
 
     def metric(self, labels, preds):
 
-        #return self._iou_metric(labels, preds)
         return self._dice_metric(labels, preds)
 
     def loss(self, labels, preds):
 
         return self._dice_loss(labels, preds)
-        # return self._pixelwise_cross_entropy_loss(labels, preds)
-
+        
     def _parse_function(self, example_proto):
         
         features = {'image': tf.FixedLenFeature((), tf.string, ''), 'label': tf.FixedLenFeature((), tf.string, '')}
@@ -140,7 +111,6 @@ class Solver2(object):
         bundle = tf.image.random_flip_up_down(bundle)
         images = bundle[:,:,0:3]
         labels = bundle[:,:,3:]
-        #images = tf.image.random_brightness(images, 50)
 
         return images, labels
     
@@ -172,14 +142,6 @@ class Solver2(object):
         print('===> Loading checkpoint from [%s]' % checkpoint_dir)
         ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=self.model, optimizer_step=self.global_step)
         ckpt.restore(tf.train.latest_checkpoint(checkpoint_dir))
-
-    def _combine_sobel_prior(self, images):
-        
-        gray = tf.image.rgb_to_grayscale(images)
-        edges = tf.image.sobel_edges(gray)
-        edges = tf.squeeze(edges)
-
-        return tf.concat([images, edges], axis=3)
 
     def train(self):
         
@@ -244,10 +206,11 @@ class Solver2(object):
     def _load_raw_image(self, path):
 
         img = cv2.imread(path)
+        oshape = img.shape
         img = cv2.resize(img, (self.big_size, self.big_size))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         nh, nw = self.big_size // self.img_size, self.big_size // self.img_size
-        oshape = img.shape
+        
         img = tf.convert_to_tensor(img)
         imgs = []
         for i in range(nh):
@@ -266,8 +229,9 @@ class Solver2(object):
         if lbl.shape[2] > 3:
             lbl = cv2.cvtColor(lbl, cv2.COLOR_BGRA2BGR)
         lbl = cv2.cvtColor(lbl, cv2.COLOR_BGR2GRAY)
-        lbl[lbl > 127.5] = 255.0
+        lbl = lbl.astype(np.float32)
         lbl[lbl < 127.5] = 0.0
+        lbl[lbl > 127.5] = 1.0
         lbls = []
         lbl = np.reshape(lbl, [self.big_size, self.big_size, 1])
         for i in range(nh):
@@ -277,18 +241,6 @@ class Solver2(object):
         lbls = tf.cast(lbls, tf.float32)
 
         return lbls
-
-    def _show_image(self, img_tensor):
-
-        n, h, w, c = img_tensor.shape[0], img_tensor.shape[1], img_tensor.shape[2], img_tensor.shape[3]
-
-        img_tensor = tf.reshape(img_tensor, [h, w, c])
-        img = img_tensor.numpy().astype(np.uint8)
-        if c == 1:
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        plt.figure()
-        plt.imshow(img)
-        plt.show()
     
     def _show_all(self, img, lbl, prd):
         
@@ -314,6 +266,12 @@ class Solver2(object):
         hard_map = tf.image.convert_image_dtype(hard_map, tf.uint8, True)
 
         return hard_map
+    
+    def _convert_label(self, label):
+
+        label = tf.image.convert_image_dtype(label, tf.uint8, True)
+
+        return label
     
     def _reconstruct_image(self, images):
 
@@ -341,8 +299,7 @@ class Solver2(object):
             test_fns = test_list.readlines()
             test_fns = list(map(lambda x: x.strip(), test_fns))
         
-        #test_fns = sorted(test_fns)
-        test_acc = []
+        test_dice = []
         for idx in range(0, len(test_fns), 2):
             
             img_name = test_fns[idx]
@@ -360,7 +317,8 @@ class Solver2(object):
             
             image = self._denormalize_image(image)
             prediction = self._hard_predict(1.0 - pred_fg)
-            
+            label = self._convert_label(label)
+
             image = self._reconstruct_image(image)
             label = self._reconstruct_image(label)
             prediction = self._reconstruct_image(prediction)
@@ -369,14 +327,62 @@ class Solver2(object):
             
             dice_fg = dice_fg.numpy()
 
-            test_acc.append(dice_fg)
+            test_dice.append(dice_fg)
 
             prog = idx / len(test_fns) * 100
             print('[%dth Sample] TestingDice = %.2f, Progress = %.2f%%.' % ((idx + 1), dice_fg, prog), end='\r')
         
-        test_acc = np.array(test_acc).mean()
+        test_dice = np.array(test_dice).mean()
         
         print('\n')
-        print('Total dice = %.2f.' % test_acc)
+        print('Total dice = %.2f.' % test_dice)
         
         print('===> Testing ends.')
+
+    def _reshape_save_image(self, image, oshape, fname):
+
+        oh, ow = oshape[0], oshape[1]
+        image = image.astype(np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        image = cv2.resize(image, (ow, oh), cv2.INTER_CUBIC)
+        cv2.imwrite(fname, image)
+
+    def play(self):
+        
+        print('===> Playing Starts .')
+        print('\n')
+
+        self._load_checkpoint()
+
+        test_list_path = self.data_opt['play']['in']
+        out_dir = self.data_opt['play']['out']
+
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        with open(test_list_path, 'r') as test_list:
+            test_fns = test_list.readlines()
+            test_fns = list(map(lambda x: x.strip(), test_fns))
+        
+        for idx, test_fn in enumerate(test_fns):
+            
+            filename = test_fn.split('/')[-1]
+            filename = out_dir + filename
+
+            image, oshape = self._load_raw_image(test_fn)
+
+            image = self._normalize_image(image)
+            
+            pred = self.model(image, False)
+            pred_fg = pred[:,:,:,0:1]
+            
+            prediction = self._hard_predict(1 - pred_fg)
+            prediction = self._reconstruct_image(prediction)
+            
+            self._reshape_save_image(prediction, oshape, filename)
+            
+            print('%d / %d Image done.' % (idx + 1, len(test_fns)), end='\r')
+        
+        print('\n')
+        print('===> Playing ends.')
+    

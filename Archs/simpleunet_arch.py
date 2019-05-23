@@ -14,7 +14,6 @@ class SimpleUNet(tf.keras.Model):
         self.weight_decay = weight_decay
         self.initializer = initializer
         self.regularizer = tf.keras.regularizers.l2(self.weight_decay)
-        self.drop_rate = drop_rate
 
         self.conv_in = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)
         self.conv1_1 = tf.keras.layers.Convolution2D(self.num_features, 3, 1, 'same', activation='relu', kernel_initializer=self.initializer, kernel_regularizer=self.regularizer)

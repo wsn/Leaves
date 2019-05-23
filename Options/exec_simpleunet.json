@@ -3,7 +3,7 @@
     "img_size" : 256,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": "test",
+    "is_training": "play",
     "gpu_id": "6",
 
     "datasets": {
@@ -15,7 +15,11 @@
        },
        "test":{
            "dir":"./Dataprep/results/test2.txt"
-       }
+       },
+       "play":{
+            "in":"./Plays/task2.txt",
+            "out":"./Plays/predictions/"
+        }
     },
 
     "networks": {

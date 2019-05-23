@@ -31,7 +31,7 @@ class Model_fcn8(tf.keras.Model):
         self.activ_1 = tf.keras.layers.Activation('softmax')
 
 
-    def call(self, x, training=True):
+    def call(self, x, training):
         x3 = self.block1(x,training)
         x2 = self.block2(x3,training)
         x1 = self.block3(x2,training)
@@ -79,7 +79,7 @@ class Block1(tf.keras.Model):
         self.max_pool3 = tf.keras.layers.MaxPooling2D(2, 2, 'same',name='max_pool3')
         #self.dropout_3=tf.keras.layers.Dropout(0.5)
 
-    def call(self, x, training=True):
+    def call(self, x, training):
 
         x = self.conv1_1(x)
         x = self.conv1_2(x)
@@ -116,7 +116,7 @@ class Block2(tf.keras.Model):
         self.max_pool4 = tf.keras.layers.MaxPooling2D(2, 2, 'same',name='max_pool4')
         #self.dropout_1=tf.keras.layers.Dropout(0.5)
 
-    def call(self, x, training=True):
+    def call(self, x, training):
         x = self.conv4_1(x)
         x = self.conv4_2(x)
         x = self.conv4_3(x)
@@ -147,7 +147,8 @@ class Block3(tf.keras.Model):
         #self.dropout_2=tf.keras.layers.Dropout(0.5)
         self.score_fr = tf.keras.layers.Convolution2D(self.nclasses, 1, 1, 'same', activation='relu',kernel_initializer='he_normal',name = 'score_fr')
         
-    def call(self, x, training=True):
+    def call(self, x, training):
+        pdb.set_trace()
         x = self.conv5_1(x)
         x = self.conv5_2(x)
         x = self.conv5_3(x)
@@ -183,10 +184,11 @@ class Model_fcn32(tf.keras.Model):
     def get_layer(self, name=None, index=None):
         return super().get_layer(name=name, index=index)
 
-    def call(self, x, training=True):
+    def call(self, x, training):
 
         x = self.block1(x,training)
         x = self.block2(x,training)
+        #pdb.set_trace()
         x = self.block3(x,training)
         x = self.score2(x)
         #x = self.reshape_1(x)
