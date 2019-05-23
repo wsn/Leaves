@@ -11,12 +11,12 @@ def define_net(opt):
     which_model = opt['which_model'].upper()
     print('===> Building network [%s]...' % which_model)
 
-    if which_model == 'SIMPLE':
-        from .simple_arch import Simple
-        net = Simple(opt['num_features'], opt['weight_decay'], opt['initializer'])
+    if which_model == 'SIMPLEVGG':
+        from .simplevgg_arch import SimpleVGG
+        net = SimpleVGG(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'NAIVE':
-        from .naive_arch import Naive
-        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'], opt['drop_rate'])
+        from .simpleunet_arch import SimpleUNet
+        net = Naive(opt['num_features'], opt['weight_decay'], opt['initializer'])
     elif which_model == 'HOURGLASS':
         from .hourglass_arch import Hourglass
         net = Hourglass(opt['num_features'], opt['initializer'], opt['weight_decay'])
