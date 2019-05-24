@@ -6,12 +6,16 @@
 *.txt
 *.tfrecord
 *.rar
+*.tar.gz
 
 # Compiled 
 __pycache__
 
 # Models
-Models/*
+Models/*/checkpoint
+Models/*/*.index
+Models/*/*.data-00000-of-00001
 
 # Tester
-Plays/*
+Plays/*.txt
+Plays/predictions
