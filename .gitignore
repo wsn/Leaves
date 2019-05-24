@@ -1,13 +1,21 @@
-﻿# Datasets will not be committed.
+# Datasets will not be committed.
 *.zip
 *.jpg
 *.JPG
 *.jpeg
 *.txt
 *.tfrecord
+*.rar
+*.tar.gz
 
 # Compiled 
 __pycache__
 
 # Models
-Models/*
+Models/*/checkpoint
+Models/*/*.index
+Models/*/*.data-00000-of-00001
+
+# Tester
+Plays/*.txt
+Plays/predictions

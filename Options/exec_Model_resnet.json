@@ -1,0 +1,42 @@
+{
+    "task": "1",
+    "img_size" : 128,
+    "img_channels" : 3,
+    "cpu_threads": 16,
+    "is_training": "test",
+    "gpu_id": "2",
+
+    "datasets": {
+       "train":{
+            "dir":"./Dataprep/results/train1.tfrecord"
+       },
+       "val":{
+            "dir":"./Dataprep/results/val1.tfrecord"
+       },
+       "test":{
+           "dir":"./Dataprep/results/test1.txt"
+       },
+       "play":{
+            "dir":"./Plays/task1.txt"
+        }
+    },
+
+    "networks": {
+        "which_model": "MODEL_RESNET",
+        "drop_rate": 0.5
+    },
+
+    "solver": {
+        "batch_size": 32,
+        "optimizer_type": "adam",
+        "lr_init": 1e-4,
+        "lr_decay": 0.5,
+        "decay_steps": 5000,
+        "eval_steps": 200,
+        "save_steps": 400,
+        "max_steps": 20000,
+        "ckpt_dir": "./Models/",
+        "ckpt_id": 2,
+        "resume": false
+    }
+}

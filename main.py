@@ -1,11 +1,11 @@
-﻿import argparse
+import argparse
 import os
 import pdb
 import tensorflow as tf
 import numpy as np
 
 from Solvers import create_solver
-from options import parse_opt
+from Options import parse_opt
 
 def main():
     

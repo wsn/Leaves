@@ -1,2 +1,2 @@
-# python main.py --options ./exec_simple.json
-python main.py --options ./exec_Model_resnet.json
+# python main.py --options ./Options/exec_simplevgg.json
+python main.py --options ./Options/exec_Model_resnet.json

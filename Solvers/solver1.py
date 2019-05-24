@@ -1,12 +1,11 @@
+import tensorflow as tf
+import numpy as np
 import os
 import pdb
-
 import cv2
-import numpy as np
-import tensorflow as tf
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 from Archs import create_model
-
 
 class Solver1(object):
 
@@ -61,10 +60,12 @@ class Solver1(object):
     
     def loss(self, labels, logits):
 
+        # Categorical Cross Entropy Loss
         return tf.math.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(labels, logits, True))
     
     def metric(self, labels, logtis):
 
+        # Accuracy
         preds = tf.math.softmax(logtis)
         return tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_accuracy(labels, preds))
 
@@ -90,20 +91,11 @@ class Solver1(object):
         image_out = image_in / 127.5 - 1
 
         return image_out
-
-    def _denormalize_image(self, image_in):
-
-        image_out = (image_in + 1) * 127.5
-        image_out[image_out > 255.0] = 255.0
-        image_out[image_out < 0.0] = 0.0
-
-        return image_out
     
     def _augment(self, images, labels):
 
         images = tf.image.random_flip_left_right(images)
         images = tf.image.random_flip_up_down(images)
-        #images = tf.image.random_brightness(images, 50)
 
         return images, labels
 
@@ -179,7 +171,7 @@ class Solver1(object):
         img = cv2.imread(path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (self.img_size, self.img_size), interpolation=cv2.INTER_LINEAR)
-        img = tf.Variable(img, dtype=tf.float32)
+        img = tf.convert_to_tensor(img, dtype=tf.float32)
         img = tf.reshape(img, [-1, self.img_size, self.img_size, self.img_channels])
 
         return img
@@ -198,6 +190,7 @@ class Solver1(object):
         
         test_fns = sorted(test_fns)
         test_acc = np.zeros([len(test_fns)])
+        gts, prs = [], []
         for idx, test_fn in enumerate(test_fns):
             
             splitted = test_fn.split(' ')
@@ -208,17 +201,74 @@ class Solver1(object):
             image = self._load_raw_image(fname)
             image = self._normalize_image(image)
             logit = self.model(image, False)
-            
+            pred, _ = self._hard_predict(logit)
+
             acc = self.metric(label, logit) * 100
-            
+
+            prs.append(pred)
+            gts.append(label.numpy())
+
             test_acc[idx] = acc
 
             prog = idx / len(test_fns) * 100
             print('[%dth Sample] Testing Accuracy = %.2f%%, Progress = %.2f%%.' % ((idx + 1), acc.numpy(), prog), end='\r')
         
         test_acc = test_acc.mean()
+        prs = np.squeeze(np.array(prs))
+        gts = np.squeeze(np.array(gts))
+        cm = confusion_matrix(gts, prs)
         
         print('\n')
         print('Total Accuracy = %.2f%%.' % test_acc)
+
+        self._plot_confusion_matrix(cm)
         
         print('===> Testing ends.')
+    
+    def _plot_confusion_matrix(self, confusion_mat):
+        
+        plt.grid(False)
+        plt.imshow(confusion_mat,interpolation='nearest', cmap='plasma')
+        plt.title('Confusion Matrix')
+        plt.colorbar()
+        tick_marks=np.arange(confusion_mat.shape[0])
+        plt.xticks(tick_marks,tick_marks)
+        plt.yticks(tick_marks,tick_marks)
+        plt.ylabel('Groundtruth Label')
+        plt.xlabel('Prediction Label')
+        plt.show()
+
+    def _hard_predict(self, logit):
+        
+        logit = tf.squeeze(logit)
+        pred = tf.math.softmax(logit)
+        class_id = tf.math.argmax(pred).numpy()
+        prob = pred[class_id].numpy()
+
+        return class_id, prob
+
+    def play(self):
+
+        print('===> Playing Starts .')
+        print('\n')
+
+        self._load_checkpoint()
+
+        test_list_path = self.data_opt['play']['dir']
+
+        with open(test_list_path, 'r') as test_list:
+            test_fns = test_list.readlines()
+            test_fns = list(map(lambda x: x.strip(), test_fns))
+        
+        for idx, test_fn in enumerate(test_fns):
+            
+            image = self._load_raw_image(test_fn)
+            image = self._normalize_image(image)
+            logit = self.model(image, False)
+            class_id, prob = self._hard_predict(logit)
+            prob = prob * 100
+            
+            print('[%s] Prediction class id : %d, Confidence probablity : %.2f%%.' % (test_fn, class_id, prob))
+        
+        print('\n')
+        print('===> Playing ends.')

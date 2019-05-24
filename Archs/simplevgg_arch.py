@@ -1,15 +1,15 @@
 import tensorflow as tf
 import pdb
 
-class Simple(tf.keras.Model):
+class SimpleVGG(tf.keras.Model):
 
     '''
-        Simple : Simplified VGG-19 Architecture for task 1.
+        SimpleVGG : Simplified VGG-19 Architecture for task 1.
     '''
 
     def __init__(self, num_features, weight_decay, initializer):
 
-        super(Simple, self).__init__()
+        super(SimpleVGG, self).__init__()
         
         self.num_features = num_features
         self.weight_decay = weight_decay

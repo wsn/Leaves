@@ -2,9 +2,9 @@
     "task": "2",
     "img_size" : 256,
     "img_channels" : 3,
-    "cpu_threads": 8,
-    "is_training": "train",
-    "gpu_id": "7",
+    "cpu_threads": 16,
+    "is_training": "test",
+    "gpu_id": "3",
 
     "datasets": {
        "train":{
@@ -15,27 +15,29 @@
        },
        "test":{
            "dir":"./Dataprep/results/test2.txt"
-       }
+       },
+       "play":{
+            "in":"./Plays/task2.txt",
+            "out":"./Plays/predictions/"
+        }
     },
 
     "networks": {
-        "which_model": "HOURGLASS",
-        "num_features": 64,
-        "weight_decay": 1e-3,
-        "initializer": "he_normal"
+        "which_model": "MODEL_FCN8",
+        "num_features": 64
     },
 
     "solver": {
-        "batch_size": 16,
+        "batch_size": 32,
         "optimizer_type": "adam",
-        "lr_init": 1e-4,
+        "lr_init": 1e-3,
         "lr_decay": 0.5,
         "decay_steps": 10000,
-        "eval_steps": 500,
+        "eval_steps": 200,
         "save_steps": 1000,
         "max_steps": 100000,
         "ckpt_dir": "./Models/",
-        "ckpt_id": 5,
-        "resume": false
+        "ckpt_id": 4,
+        "resume": true
     }
 }
