@@ -148,7 +148,7 @@ class Block3(tf.keras.Model):
         self.score_fr = tf.keras.layers.Convolution2D(self.nclasses, 1, 1, 'same', activation='relu',kernel_initializer='he_normal',name = 'score_fr')
         
     def call(self, x, training):
-        pdb.set_trace()
+        #pdb.set_trace()
         x = self.conv5_1(x)
         x = self.conv5_2(x)
         x = self.conv5_3(x)

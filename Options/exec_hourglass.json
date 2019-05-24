@@ -3,8 +3,8 @@
     "img_size" : 256,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": "play",
-    "gpu_id": "6",
+    "is_training": "test",
+    "gpu_id": "3",
 
     "datasets": {
        "train":{
@@ -37,9 +37,9 @@
         "decay_steps": 10000,
         "eval_steps": 500,
         "save_steps": 1000,
-        "max_steps": 100000,
+        "max_steps": 40000,
         "ckpt_dir": "./Models/",
         "ckpt_id": 5,
-        "resume": true
+        "resume": false
     }
 }

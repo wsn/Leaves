@@ -3,7 +3,7 @@
     "img_size" : 128,
     "img_channels" : 3,
     "cpu_threads": 16,
-    "is_training": "play",
+    "is_training": "test",
     "gpu_id": "2",
 
     "datasets": {
@@ -33,10 +33,10 @@
         "optimizer_type": "adam",
         "lr_init": 1e-5,
         "lr_decay": 0.5,
-        "decay_steps": 10000,
+        "decay_steps": 5000,
         "eval_steps": 500,
         "save_steps": 1000,
-        "max_steps": 100000,
+        "max_steps": 20000,
         "ckpt_dir": "./Models/",
         "ckpt_id": 0,
         "resume": false

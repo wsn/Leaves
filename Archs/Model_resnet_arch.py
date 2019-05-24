@@ -19,11 +19,21 @@ class Model_resnet(tf.keras.Model):
         self.width = 128
         self.height = 128
         self.drop_rate = 0.5
-        self.model= Resnet_50(self.width,self.height,self.img_channels, self.drop_rate) 
+        #self.model= Resnet_50(self.width,self.height,self.img_channels, self.drop_rate)
+        self.conv_part = tf.keras.applications.ResNet50(include_top=False, weights=None, pooling='avg')
+        self.flatten = tf.keras.layers.Flatten()
+        self.drop = tf.keras.layers.Dropout(self.drop_rate)
+        self.fc_part = tf.keras.layers.Dense(3, activation=None)
     
        
     def call(self, x, training):
-        x = self.model(x,training)
+        #x = self.model(x,training)
+
+        x = self.conv_part(x, training)
+        x = self.flatten(x)
+        x = self.drop(x, training)
+        x = self.fc_part(x)
+
         return x
 
 class Resnet_50(tf.keras.Model):

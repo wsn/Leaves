@@ -1,10 +1,10 @@
+import tensorflow as tf
+import numpy as np
 import os
 import pdb
-
 import cv2
-import numpy as np
-import tensorflow as tf
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 from Archs import create_model
 
 class Solver1(object):
@@ -171,7 +171,7 @@ class Solver1(object):
         img = cv2.imread(path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (self.img_size, self.img_size), interpolation=cv2.INTER_LINEAR)
-        img = tf.Variable(img, dtype=tf.float32)
+        img = tf.convert_to_tensor(img, dtype=tf.float32)
         img = tf.reshape(img, [-1, self.img_size, self.img_size, self.img_channels])
 
         return img
@@ -190,6 +190,7 @@ class Solver1(object):
         
         test_fns = sorted(test_fns)
         test_acc = np.zeros([len(test_fns)])
+        gts, prs = [], []
         for idx, test_fn in enumerate(test_fns):
             
             splitted = test_fn.split(' ')
@@ -200,21 +201,43 @@ class Solver1(object):
             image = self._load_raw_image(fname)
             image = self._normalize_image(image)
             logit = self.model(image, False)
-            
+            pred, _ = self._hard_predict(logit)
+
             acc = self.metric(label, logit) * 100
-            
+
+            prs.append(pred)
+            gts.append(label.numpy())
+
             test_acc[idx] = acc
 
             prog = idx / len(test_fns) * 100
             print('[%dth Sample] Testing Accuracy = %.2f%%, Progress = %.2f%%.' % ((idx + 1), acc.numpy(), prog), end='\r')
         
         test_acc = test_acc.mean()
+        prs = np.squeeze(np.array(prs))
+        gts = np.squeeze(np.array(gts))
+        cm = confusion_matrix(gts, prs)
         
         print('\n')
         print('Total Accuracy = %.2f%%.' % test_acc)
+
+        self._plot_confusion_matrix(cm)
         
         print('===> Testing ends.')
     
+    def _plot_confusion_matrix(self, confusion_mat):
+        
+        plt.grid(False)
+        plt.imshow(confusion_mat,interpolation='nearest', cmap='plasma')
+        plt.title('Confusion Matrix')
+        plt.colorbar()
+        tick_marks=np.arange(confusion_mat.shape[0])
+        plt.xticks(tick_marks,tick_marks)
+        plt.yticks(tick_marks,tick_marks)
+        plt.ylabel('Groundtruth Label')
+        plt.xlabel('Prediction Label')
+        plt.show()
+
     def _hard_predict(self, logit):
         
         logit = tf.squeeze(logit)
